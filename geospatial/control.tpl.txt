@@ -1,0 +1,76 @@
+# HRU discretization workflow setting file.
+# Characters '|' and '#' are used as separators to find the actual setting values. 
+# Any text behind '|' is assumed to be part of the setting value, unless preceded by '#'.
+
+# Note on path specification
+# If deviating from default paths, a full path must be specified. E.g. '/home/user/non-default/path'
+
+## ---- PART 1. Modeling domain settings ---- 
+root_path              | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize              # root path where data will be stored.
+source_path            | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data  # path where projected large-domain data are stored.
+domain_name            | shoshone   # use as the domain folder name for the prepared data.
+
+## ---- PART 2. Large-domain input data settings (used for crop) ----
+dem_raster             | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data/MERIT_Hydro_dem_NLDAS.tif  # path of large-domain DEM raster
+landcover_raster       | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data/annual_climate_lc.tif       # path of large-domain land raster
+soil_raster            | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data/usda_mode_soilclass_vCompressed_NA_250m_ll.tif  # path of large-domain soil raster
+stream_shp             | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data/riv_pfaf_7_MERIT_Hydro_v07_Basins_v01_wUS.shp # path of large-domain stream line shapefile
+
+## ---- PART 3.  Catchment shapefile settings (optional, required when domain_gru_shp is extracted from large-domain huc12_shp.) ---- 
+huc12_shp              | /glade/u/home/hongli/scratch/2020_06_02HRUcomplexity/discretize/source_data/west_huc12/WEST.huc12.shp  # path of large-domain HUC12 shapefile. 
+huc12_field            | HUC12                      # field name of the HUC12 column.    
+Tohuc12_field          | ToHUC                      # field name of the downstream HUC12 column.
+outlet_hucid           | 100800120304               # HUC12 where the domain basin outlet is located.
+
+## ---- PART 4. GRU and HRU column names and data types in gru and hru shapefiles ----
+# Some avaialble dtypes for rasterio: 'int16', 'int32', 'float32', 'float64'. No 'int64'!
+# reference: https://test2.biogeo.ucdavis.edu/rasterio/_modules/rasterio/dtypes.html
+gruNo_field            | gruNo                      # field name of the gru number column, e.g.,1,2,3...
+gruNo_field_dtype      | int32                      # used to save the gru raster. 
+gruName_field          | gruId                      # field name of gru name, e.g., 100800120101. 
+
+hruNo_field            | hruNo                      # field name of the hru number column, e.g.,1,2,3...
+hruNo_field_dtype      | int32                      # used to save the hru raster. 
+hruName_field          | hruId                      # field name of the hru name column, e.g., 10080012010101, 100800120102. 
+
+## ---- PART 5. Projection and nodata value in data processing ----
+proj4                  | +proj=aea +lat_1=20 +lat_2=60 +lat_0=40 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m no_defs # Albers Equal Area Conic Projection. String that PROJ uses to describe coordinate systems and transformations. Find from https://epsg.io/.
+
+## ---- PART 6. HRU elimination threshold (two options: value, fraction) ----
+# hru_thld_type        | value                      # use a constant area to eliminate small HRUs.
+# hru_thld             | 10**6                      # area threhold, unit: meter.
+hru_thld_type          | fraction                   # use a fraction to eliminate small HRUs.
+hru_thld               | 0.05                       # area threhold, fraction of the gru area.
+
+### ---- PART 7. intermediate filees (NO EDITION NEEDED IF USING DEFAULT) ---- 
+dem_prj_raster                   | default         # projected large-domian DEM raster. If 'default', use 'root_path/source_data/dem_raster+'_prj.tif'.
+landcover_prj_raster             | default         # projected large-domian landcover raster. If 'default', use 'root_path/source_data/landcover_raster_name+'_prj.tif'.
+soil_prj_raster                  | default         # projected large-domian soil raster. If 'default', use 'root_path/source_data/soil_raster_name+'_prj.tif'.
+stream_prj_shp                   | default         # projected large-domian streamflow raster. If 'default', use 'root_path/source_data/stream_shp_name+'_prj.shp'.
+
+domain_gru_shp                   | default         # domian GRU shapefile path. If 'default', use 'root_path/[domain_name]/gru.shp'.
+domain_hucid_txt                 | default         # text file with the list of domain HUC12 ids. It's generated only if domain_gru_shp is extracted from large-domain huc12_shp. If 'default', use 'root_path/[domain_name]/huc12Ids.txt.
+domain_gru_corr_txt              | default         # text file with the correspondence of GRU number and HUC12 id. It's generated only if domain_gru_shp is extracted from large-domain huc12_shp. If 'default', use 'root_path/[domain_name]/gruNo_HUC12_corr.txt'.
+domain_gru_prj_shp               | default         # projected domian GRU shapefile path. If 'default', use 'root_path/[domain_name]/gru_prj.shp'.
+domain_gru_raster                | default         # projected domian GRU raster path. If 'default', use 'root_path/[domain_name]/gru.tif'.
+ 
+domain_dem_raster                | default         # domain dem raster path. If 'default', use 'root_path/[domain_name]/dem.tif'.
+domain_slope_raster              | default         # domain slope raster path. If 'default', use 'root_path/[domain_name]/slope.tif'. 
+domain_aspect_raster             | default         # domain slope raster path. If 'default', use 'root_path/[domain_name]/aspect.tif'.
+domain_soil_raster               | default         # domain soil raster path. If 'default', use 'root_path/[domain_name]/soil.tif'.
+domain_radiation_raster          | default         # domain radiation raster path.  If 'default', use 'root_path/[domain_name]/radiation.tif'.
+domain_stream_shp                | default         # domain stream shapefile path. If 'default', use 'root_path/[domain_name]/stream.shp'.
+
+domain_landcover_raster          | default          # domain landcover raster path. If 'default', use 'root_path/[domain_name]/landcover.tif'.
+domain_landcover_resample_raster | default          # domain landcover resample raster path, resampled according to the resolution of refraster. 
+domain_landcover_class_raster    | default          # domain landcover class raster path. If 'default', use 'root_path/[domain_name]/landcover_class.tif'.
+                                                    # If 'default', use 'root_path/[domain_name]/landcover_crop_resample.tif.
+domain_landcover_class_raster    | default          # domain landcover class raster path (eg, 1: canopy, 2: non-canopy). 
+                                                    # If 'default', use 'root_path/[domain_name]/landcover_class.tif'.
+
+refraster                        | default          # reference raster path, used in vector rasterization and resample. If 'default', uses 'domain_dem_raster'.
+
+elev_class_field                 | elevClass        # field name of the elevation class column in HRU. 
+land_class_field                 | lcClass          # field name of the land class column in HRU. 
+radiation_class_field            | radClass         # field name of the radiation class column in HRU.
+hru_area_field                   | areaSqm          # field name of the HRU area, used in small HRU elimination.
