@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+# Genevieve Brown, Hongli Liu, Dec. 2020.
 
 import argparse, os
 import numpy as np
