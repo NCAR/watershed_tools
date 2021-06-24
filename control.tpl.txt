@@ -6,71 +6,69 @@
 # If deviating from default paths, a full path must be specified. E.g. '/home/user/non-default/path/'
 
 ## ---- Main directory paths and domain files ---- 
-basin_name               | 06282000                                                  # use as the basin data directory
-basin_data_path          | /glade/work/andywood/complexity/basins/bighorn/06282000/  # top of directory storing working basin data
-basin_gru_shp            | /glade/work/andywood/complexity/basins/bighorn/06282000/gis/06282000.huc12.shp    # basin GRU shapefile
-main_path                | /glade/u/home/andywood/proj/SHARP/wreg/complexity/watershed_tools/    # main directory of local repo
-tmpfile_path             | /glade/scratch/andywood/temp/                             # temporary file path
+basin_name                      | 06282000                                                  # use as the basin data directory
+basin_data_path                 | /glade/work/andywood/complexity/basins/bighorn/06282000/  # top of directory storing working basin data
+basin_gru_shp                   | /glade/work/andywood/complexity/basins/bighorn/06282000/gis/06282000.huc12.shp    # basin GRU shapefile
+main_path                       | /glade/u/home/andywood/proj/SHARP/wreg/complexity/watershed_tools/    # main directory of local repo
+tmpfile_path                    | /glade/scratch/andywood/temp/                             # temporary file path
 
 ## ---- Large-domain input data files (used for crop) ----
-fulldom_data_path        | /glade/work/andywood/complexity/source_data/              # source large-domain data files
-fulldom_dem_raster       | /glade/work/andywood/complexity/source_data/MERIT_Hydro_dem_NLDAS.tif                       # large-domain DEM raster
-fulldom_landcover_raster | /glade/work/andywood/complexity/source_data/annual_climate_lc.tif                    # large-domain land cover raster
-fulldom_soiltype_raster  | /glade/work/andywood/complexity/source_data/usda_mode_soilclass_vCompressed_NA_250m_ll.tif  # large-domain soil raster
-fulldom_flowline_shp     | /glade/work/andywood/complexity/source_data/riv_pfaf_7_MERIT_Hydro_v07_Basins_v01_wUS.shp   # large-domain stream line shapefile
+fulldom_data_path               | /glade/work/andywood/complexity/source_data/              # source large-domain data files
+fulldom_dem_raster              | /glade/work/andywood/complexity/source_data/MERIT_Hydro_dem_NLDAS.tif                       # large-domain DEM raster
+fulldom_landcover_raster        | /glade/work/andywood/complexity/source_data/annual_climate_lc.tif                    # large-domain land cover raster
+fulldom_soiltype_raster         | /glade/work/andywood/complexity/source_data/usda_mode_soilclass_vCompressed_NA_250m_ll.tif  # large-domain soil raster
+fulldom_flowline_shp            | /glade/work/andywood/complexity/source_data/riv_pfaf_7_MERIT_Hydro_v07_Basins_v01_wUS.shp   # large-domain stream line shapefile
 
 ## ---- GRU and HRU column names and data types in gru and hru shapefiles ----
 # Some available dtypes for rasterio: 'int16', 'int32', 'float32', 'float64'. No 'int64'!
 # reference: https://test2.biogeo.ucdavis.edu/rasterio/_modules/rasterio/dtypes.html
-gruNo_fieldname        | gruNo                      # field name of the gru number column, e.g.,1,2,3...
-gruNo_field_dtype      | int64                      # used to save the gru raster. 
-gruName_fieldname      | gruId                      # field name of gru name, e.g., 100800120101. 
-hruNo_fieldname        | hruNo                      # field name of the hru number column, e.g.,1,2,3...
-hruNo_field_dtype      | int64                      # used to save the hru raster. 
-hruName_fieldname      | hruId                      # field name of the hru name column, e.g., 10080012010101, 100800120102. 
+gruNo_fieldname                 | gruNo                      # field name of the gru number column, e.g.,1,2,3...
+gruNo_field_dtype               | int32                      # used to save the gru raster.  Cannot be 'int64'
+gruId_fieldname                 | gruId                      # field name of gru ID column, e.g., 100800120101. 
+hruNo_fieldname                 | hruNo                      # field name of the hru number column, e.g.,1,2,3...
+hruNo_field_dtype               | int32                      # used to save the hru raster.  Cannot be 'int64'
+hruId_fieldname                 | hruId                      # field name of the hru ID column, e.g., 10080012010101, 100800120102. 
 
 ## ---- Projection and nodata value in data processing ----
-#epsg                  | 102008   # esri projection north american albers (gdal/geopandas can't handle)
-epsg                   | 5070   # CONUS albers
+#epsg                           | 102008   # esri projection north american albers (gdal/geopandas can't handle)
+epsg                            | 5070   # CONUS albers
 
 ## ---- HRU elimination threshold (two options: value, fraction) ----
-hru_thld_type          | fraction                   # ['value' | 'fraction'] use a constant area value (m^2)or area fraction to eliminate small HRUs
-hru_thld               | 0.05                       # area threshold, fraction of the gru area.
+hru_threshold_type              | fraction                   # ['value' | 'fraction'] use a constant area value (m^2)or area fraction to eliminate small HRUs
+hru_threshold                   | 0.05                       # area threshold, fraction of the gru area.
 
 ## ---- Radiation calculation period ----
-solrad_start_DOY       | 75                         # March 15 (approx start of snowmelt)
-solrad_end_DOY         | 167                        # June 15 (approx end of snowmelt)
+solrad_start_DOY                | 75                         # March 15 (approx start of snowmelt)
+solrad_end_DOY                  | 167                        # June 15 (approx end of snowmelt)
 
 ## ---- Intermediate files ---- 
-basin_gru_shp                   | gru.shp         # domain GRU shapefile path. ['basin_data_path/gru.shp']
-basin_flowlines_shp             | flowlines.shp   # domain stream shapefile path. ['basin_data_path/flowlines.shp']
-basin_hucId_txt                 | hucIds.txt            # text file with the list of domain HUC12 ids ['basin_data_path/hucIds.txt]
-                                                        #   Generated only if domain_gru_shp is extracted from large-domain huc12_shp.
-basin_gruNo_hucId_txt           | gruNo2hruID.txt   # textfile, correspondence of GRU no and HUC12 id ['basin_data_path/gruNo_HUC12_corr.txt']
-                                                        # generated only if domain_gru_shp is extracted from large-domain huc12_shp. 
-basin_gru_raster                | gru.tif          # projected domain GRU raster path. ['basin_data_path/gru.tif']
-basin_dem_raster                | dem.tif          # domain dem raster path. ['basin_data_path/dem.tif']
-basin_slope_raster              | slope.tif        # domain slope raster path. ['basin_data_path/slope.tif']
-basin_aspect_raster             | aspect.tif       # domain slope raster path. ['basin_data_path/aspect.tif']
-basin_soiltype_raster           | soiltype.tif     # domain soil raster path. ['basin_data_path/soil.tif']
-basin_radiation_raster          | srad.tif         # domain radiation raster path. ['basin_data_path/radiation.tif']
+basin_gru_shp                   | gru.shp           # basin GRU shapefile path. ['basin_data_path/gru.shp']
+basin_flowlines_shp             | flowlines_prj.shp # basin stream shapefile path. ['basin_data_path/flowlines_prj.shp']; only exists reprojected
+basin_hucId_txt                 | hucIds.txt            # text file with the list of basin HUC ids ['basin_data_path/hucIds.txt]
+                                                        #   Generated by 'prepare_basin_shapefiles' script
+basin_gruNo_gruId_txt           | gruNo_gruID.txt   # textfile, correspondence of GRU number and GRU id ['basin_data_path/gruNo_gruId.txt']
+                                                        # generated by 'rasterize_vector()' in 'prepare_dem' script
+basin_gru_raster                | gru.tif           # projected domain GRU raster path. ['basin_data_path/gru.tif']
+basin_dem_raster                | dem.tif           # basin dem raster path. ['basin_data_path/dem.tif']
+basin_slope_raster              | slope.tif         # basin slope raster path. ['basin_data_path/slope.tif']
+basin_aspect_raster             | aspect.tif        # basin slope raster path. ['basin_data_path/aspect.tif']
+basin_soiltype_raster           | soiltype.tif      # basin soil raster path. ['basin_data_path/soil.tif']
+basin_radiation_raster          | srad.tif          # basin radiation raster path. ['basin_data_path/radiation.tif']
 
-basin_landcover_raster          | landcover.tif    # domain landcover raster path. ['basin_data_path/landcover.tif']
-basin_landcover_resample_raster | lc_resample.tif  # domain landcover resample raster path, resampled to refraster res. ['basin_data_path/lc_resample.tif]
-basin_landcover_class_raster    | lc_class.tif     # domain landcover class raster path. ['basin_data_path/lc_class.tif']
-basin_canopy_class_raster       | canopy_class.tif # domain landcover class raster path (eg, 1: canopy, 2: non-canopy)] 
-                                                   #  ['basin_data_path/canopy_class.tif']
-refraster                       | dem.tif          # reference raster file, read from basin_data_path/, used in vector rasterization and resampling
-                                                   # default: set to the same as the 'basin_dem_raster' entry
+basin_landcover_raster          | landcover.tif     # basin landcover raster path. ['basin_data_path/landcover.tif']
+basin_landcover_resample_raster | lc_resample.tif   # basin landcover resample raster path, resampled to refraster res. ['gis_path/lc_resample.tif]
+basin_canopy_class_raster       | canopy_class.tif  # basin landcover class raster path (eg, 1: canopy, 2: non-canopy)] ['gis_path/canopy_class.tif']
+refraster                       | default           # reference raster file, read from basin_data_path/, used in vector rasterization and resampling
+                                                    # default: set to the same as the 'basin_dem_raster' entry
 
 ## ---- Fieldnames to assign to discretized shapefiles ---- 
-elev_class_fieldname            | elevClass        # field name of the elevation class column in HRU. 
-land_class_fieldname            | lcClass          # field name of the land class column in HRU. 
-radiation_class_fieldname       | radClass         # field name of the radiation class column in HRU.
-hru_area_fieldname              | areaSqm          # field name of the HRU area, used in small HRU elimination.
+elev_class_fieldname            | elevClass         # field name of the elevation class column in HRU. 
+land_class_fieldname            | lcClass           # field name of the land class column in HRU. 
+radiation_class_fieldname       | radClass          # field name of the radiation class column in HRU.
+hru_area_fieldname              | areaSqm           # field name of the HRU area, used in small HRU elimination.
 
 ## ---- Optional.  Catchment shapefile extraction from larger domain shapefile ----
 fulldom_huc_shpfile             | /glade/work/complexity/source_data/west_huc12/WEST.huc12.shp        # large-domain HUC12 shapefile. 
-huc_fieldname                   | HUCIDXint                  # field name of the HUC column.    
-toHuc_fieldname                 | ToHUC                      # field name of the downstream HUC12 column.
-basin_outlet_hucId              | 100800140106               # HUC12 where the domain basin outlet is located.  # not ...0304
+huc_fieldname                   | HUCIDXint         # field name of the HUC column.    
+toHuc_fieldname                 | ToHUC             # field name of the downstream HUC12 column.
+basin_outlet_hucId              | 100800140106      # HUC12 where the domain basin outlet is located.  # not ...0304

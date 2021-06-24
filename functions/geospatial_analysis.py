@@ -81,32 +81,32 @@ def reproject_vector(invector, outvector, new_epsg):
     in_gdf_prj.to_file(outvector)               # save projected geodataframe
     return 
     
-def rasterize_gru_vector(invector,infield,gruName_field,gruNo_field,gruNo_field_dtype,refraster,outraster,gru_corr_txt):
+def rasterize_gru_vector(invector, infield, gruId_fieldname, gruNo_fieldname, gruNo_field_dtype, refraster, outraster, gruNo_gruId_txt):
     # reference: https://gis.stackexchange.com/questions/151339/rasterize-a-shapefile-with-geopandas-or-fiona-python
     '''
-    invector: input, vector, the vector to be rasterized.
-    infield: input, str, attribute field of input vector that is used as a burn-in value.
-    gruName_field: input, str, gru name field, add to the updated invector.
-    gruNo_field: input, str, field name of the gru number column, e.g.,1,2,3....
+    invector:          input, vector, the vector to be rasterized.
+    infield:           input, str, attribute field of input vector that is used as a burn-in value.
+    gruId_fieldname:   input, str, gru name field, add to the updated invector.
+    gruNo_fieldname:   input, str, field name of the gru number column, e.g.,1,2,3....
     gruNo_field_dtype: input, str, data type of gruNo_field, used to specify dtype of output gru raster.
-    refraster: input, raster, reference raster to get meta. 
-    outraster: output, raster, path of output raster.
-    gru_corr_txt: output, txt, gruNo-gruName correspondence relationship.    '''
+    refraster:         input, raster, reference raster to get meta. 
+    outraster:         output, raster, path of output raster.
+    gruNo_gruId_txt:   output, txt, gruNo-gruId correspondence relationship (csv).    '''
     
     # open input vector
     in_gdf = gpd.read_file(invector)  
     in_gdf = in_gdf.sort_values(by=[infield])
 
     # add a gruName_field to gdf
-    in_gdf[gruName_field] = in_gdf[infield]
-    in_gdf[gruName_field] = pd.to_numeric(in_gdf[gruName_field], errors='coerce')
+    in_gdf[gruId_fieldname] = in_gdf[infield]
+    in_gdf[gruId_fieldname] = pd.to_numeric(in_gdf[gruId_fieldname], errors='coerce')
 
     # add a gruNo_field to gdf
-    in_gdf[gruNo_field] = np.arange(1,len(in_gdf)+1)
-    in_gdf[gruNo_field] = pd.to_numeric(in_gdf[gruNo_field], errors='coerce')
+    in_gdf[gruNo_fieldname] = np.arange(1,len(in_gdf)+1)
+    in_gdf[gruNo_fieldname] = pd.to_numeric(in_gdf[gruNo_fieldname], errors='coerce')
 
-    # save the correspondence between gruName and gruNo
-    in_gdf[[gruNo_field,gruName_field]].to_csv(gru_corr_txt, sep=',', index=False)    
+    # save the correspondence between gruNo and gruId
+    in_gdf[[gruNo_fieldname, gruId_fieldname]].to_csv(gruNo_gruId_txt, sep=',', index=False)    
 
     # copy and update the metadata from the input raster for the output
     # avaialble dtypes for rasterio: 'int16', 'int32', 'float32', 'float64' 
@@ -118,13 +118,13 @@ def rasterize_gru_vector(invector,infield,gruName_field,gruNo_field,gruNo_field_
     meta.update(count=1, dtype=gruNo_field_dtype, compress='lzw')
 
     with rio.open(outraster, 'w+', **meta) as out:
-        out_arr = out.read(1)
+        out_arr   = out.read(1)
 
         # burn the features into the raster and write it out
         # this is where we create a generator of geom, value pairs to use in rasterizing
-        shapes = ((geom,value) for geom, value in zip(in_gdf['geometry'], in_gdf[gruNo_field]))  
+        shapes    = ((geom,value) for geom, value in zip(in_gdf['geometry'], in_gdf[gruNo_fieldname]))  
         # Areas not covered by input geometries are replaced with an optional fill value, which defaults to 0.
-        burned = rio.features.rasterize(shapes=shapes, out=out_arr, fill=nodatavals, transform=out.transform)
+        burned    = rio.features.rasterize(shapes=shapes, out=out_arr, fill=nodatavals, transform=out.transform)
         burned_ma = np.ma.masked_array(burned, ref_mask==0)
         out.write(burned_ma,1) 
     
@@ -568,14 +568,14 @@ def polygonize_raster(inraster, outvector, attrb_field, attrb_field_dtype):
     return
 
 # Create HRU by overlaying a list of provided input rasters.
-def define_hru(raster_list, fieldname_list, gru_raster, gru_corr_txt, gruNo_field, gruName_field,
+def define_hru(raster_list, fieldname_list, gru_raster, gruNo_hucId_txt, gruNo_field, gruName_field,
                outraster, outvector, hruNo_field, hruNo_field_dtype, hruName_field):
     '''
     raster_list: input, list, a list raster inputs that are used to define HRU.
     fieldname_list: input, str, a list of field names corresponding to raster_list.
     gru_raster: input, raster, gru input raster.
     gruNo_field: input, string, field name of the gru number column, e.g.,1,2,3... 
-    gru_corr_txt: input, text, gruNo-HUC12 correspondence txt file.
+    gruNo_hucId_txt: input, text, gruNo-HUC correspondence txt file.
     outraster: output, raster, HRU raster with integer value.
     outvector: output, raster, HRU vector with HRU_full and HRU_int fields. '''
     
@@ -589,19 +589,19 @@ def define_hru(raster_list, fieldname_list, gru_raster, gru_corr_txt, gruNo_fiel
     for iraster, raster in enumerate(raster_list):
         # read raster
         with rio.open(raster) as ff:
-            raster_value  = ff.read(1)
-            raster_mask = ff.read_masks(1)
+            raster_value = ff.read(1)
+            raster_mask  = ff.read_masks(1)
 
         # convert raster value to str, and format str to the same length (i.e., the max str length) 
         raster_str = raster_value.astype(str)
-        max_len = max(map(len,raster_str[raster_mask!=0]))
+        max_len    = max(map(len,raster_str[raster_mask!=0]))
         raster_str_max_len_list.append(max_len)
         raster_str_fmt = np.char.zfill(raster_str,max_len)
 
         # concatenate element-wise two arrays to generate HRU
         if iraster == 0:
             hru_str_fmt = raster_str_fmt
-            hru_mask = (raster_mask!=0)
+            hru_mask    = (raster_mask!=0)
         else:
             hru_str_fmt = np.char.add(hru_str_fmt, raster_str_fmt)
             hru_mask = (hru_mask & raster_mask)
@@ -643,8 +643,8 @@ def define_hru(raster_list, fieldname_list, gru_raster, gru_corr_txt, gruNo_fiel
     gru_str_start = sum(raster_str_max_len_list[0:gru_index])
     gru_str_len = raster_str_max_len_list[gru_index]
 
-    # read gruNo-HUC12 corresponding text file to get gruNo <-> HUC12.
-    corr_df = pd.read_csv(gru_corr_txt, sep=",")
+    # read gruNo-HUC12 corresponding text file to get gruNo <-> hucID.
+    corr_df = pd.read_csv(gruNo_hucId_txt, sep=",")
 
     # loop through HRUs to add attributes
     for irow, row in hru_gpd_disv.iterrows():
@@ -652,19 +652,19 @@ def define_hru(raster_list, fieldname_list, gru_raster, gru_corr_txt, gruNo_fiel
         # (a) add new field columns, define other needed variables.
         if irow == 0:
             hru_gpd_disv[hruName_field] = ""    # simplified HRU name, e.g., hruNo + HRU#.
-            hru_gpd_disv[gruName_field] = ""    # HUC12 int
+            hru_gpd_disv[gruName_field] = ""    # HUC int
             for jfield, field in enumerate(fieldname_list): # other fields
                 hru_gpd_disv[field] = ""          
             hru_num_per_gru = 0           # count the number of HRUs per gru
-            gruNo_before = ''             # gruNo before this irow to update hru_num_per_gru
+            gruNo_before    = ''             # gruNo before this irow to update hru_num_per_gru
         else:
             gruNo_before = gruNo_current
 
         # (b) identify current gru ID (gruNo_current: 1,2,3...)
-        hru_str = unique_hrus_str[row[hruNo_field]-1]
+        hru_str       = unique_hrus_str[row[hruNo_field]-1]
         gruNo_current = hru_str[gru_str_start:gru_str_start+gru_str_len] 
 
-        # (c) update the number of HRUs whtin gruNo_current (hru_num_per_gru: 1,2)
+        # (c) update the number of HRUs within gruNo_current (hru_num_per_gru: 1,2)
         if gruNo_current == gruNo_before:  # if the current gruNo is the same as before, cumulate hru num.
             hru_num_per_gru = hru_num_per_gru+1
         else: # otherwise, reset hru num as zero.
@@ -678,7 +678,7 @@ def define_hru(raster_list, fieldname_list, gru_raster, gru_corr_txt, gruNo_fiel
         # (e) fill other fields for class checks 
         for jfield, field in enumerate(fieldname_list):
             field_str_start = sum(raster_str_max_len_list[0:jfield])
-            field_str_len = raster_str_max_len_list[jfield]
+            field_str_len   = raster_str_max_len_list[jfield]
             hru_gpd_disv.at[irow,field] = int(hru_str[field_str_start:field_str_start+field_str_len])          
     
     # change dtypes of name and class fields to be int64

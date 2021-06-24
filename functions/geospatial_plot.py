@@ -483,8 +483,12 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
     count_ofile = ofile.split('.')[0]+'.txt'
     count_sum   = np.sum(data_counts)
     with open(count_ofile,'w') as f:
-        f.write('#RasterValue,Label,Count,Proportion\n')
-        for i in range(len(count_record)):
-            f.write('%d,%s,%d,%.4f\n'%(count_record[i][0],count_record[i][1],count_record[i][2],
-                                       count_record[i][2]/float(count_sum)))  
+        if count_sum > 0: 
+            f.write('#RasterValue,Label,Count,Proportion\n')
+            for i in range(len(count_record)):
+                f.write('%d,%s,%d,%.4f\n'%(count_record[i][0],count_record[i][1],count_record[i][2],
+                                           count_record[i][2]/float(count_sum)))
+        else:
+            f.write('count_sum was not greater than 0\n')
+                
     return

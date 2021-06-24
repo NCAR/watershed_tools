@@ -2,10 +2,11 @@
 # coding: utf-8
 
 """
-@authors: hongli, 2020; rewritten AW Wood, 2021
+Utility functions supporting 'Watershed_Tools' code
+@authors: orig hongli liu, 2020; rewritten AW Wood, 2021
 """
 
-import os
+import os, sys
 
 # Function to extract a given setting from the configuration file
 def read_from_control(control_file, setting):
@@ -31,38 +32,25 @@ def set_filename(control_file, setting):
     fileName        = read_from_control(control_file, setting)
     basin_data_path = read_from_control(control_file, 'basin_data_path')
     gis_path        = basin_data_path + 'gis/'
-    
-    if setting == 'basin_hucId_txt':
-        fileName = basin_data_path + fileName            
-    elif setting == 'basin_gruNo_hucId_txt':
-        fileName = basin_data_path + 'gruNo_hucId.txt'            
-    elif setting == 'basin_gru_raster':
-        fileName = gis_path + 'gru.tif'            
+
+    # files in main basin_data directory
+    if setting in ['basin_hucId_txt', 'basin_gruNo_gruId_txt' ]:
+        fileName = basin_data_path + fileName
+
+    # files in GIS directory
+    elif setting in ['basin_gru_raster', 'basin_dem_raster', 'basin_slope_raster', 'basin_aspect_raster', 
+                     'basin_soiltype_raster', 'basin_radiation_raster', 'basin_landcover_raster', 
+                     'basin_landcover_resample_raster', 'refraster', 
+                     'basin_canopy_class_raster', 'canopy_class.tif', 'basin_flowlines_shp' ]:
+        
+        # special case for refraster
+        if setting == 'refraster' and fileName == 'default':
+            fileName = read_from_control(control_file, 'basin_dem_raster')
+
+        fileName = gis_path + fileName
+                   
+    else:
+        print('utility set_filename() not successful for file ', setting)
+        print('STOP')     # warning in jupyter notebook; use exit() in normal script
             
-    elif setting == 'basin_dem_raster':
-        fileName = gis_path + 'dem.tif'            
-    elif setting == 'basin_slope_raster':
-        fileName = gis_path + 'slope.tif'            
-    elif setting == 'basin_aspect_raster':
-        fileName = gis_path + 'aspect.tif'            
-    elif setting == 'basin_soiltype_raster':
-        fileName = gis_path + 'soiltype.tif'    
-    elif setting == 'basin_radiation_raster':
-        fileName = gis_path + 'radiation.tif'            
-    elif setting == 'basin_flowlines_shp':
-        fileName = gis_path + 'flowlines.shp'            
-           
-    elif setting == 'basin_landcover_raster':
-        fileName = gis_path + 'landcover.tif'            
-    elif setting == 'basin_landcover_resample_raster':
-        fileName = gis_path + 'landcover_resample.tif'            
-    elif setting == 'basin_landcover_class_raster':
-        fileName = gis_path + 'landcover_class.tif'     
-    elif setting == 'basin_canopy_class_raster':
-        fileName = gis_path + 'canopy_class.tif'            
-    elif setting == 'refraster':
-        # if a different raster is not given, default to the basin DEM
-        if(fileName == 'default'):
-            fileName = gis_path + 'dem.tif'
-           
     return fileName
