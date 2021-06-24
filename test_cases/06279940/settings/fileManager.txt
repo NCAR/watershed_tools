@@ -1,0 +1,30 @@
+controlVersion      'SUMMA_FILE_MANAGER_V3.0.0'          ! file manager version
+
+! --- simulation times ---
+simStartTime        '1970-01-01 03:00'      ! (01) simulation start time -- must be in single quotes
+simEndTime          '2019-12-31 24:00'      ! (02) simulation end time -- must be in single quotes
+tmZoneInfo          'localTime'             ! (--) forcings are in local time ('localTime') or UTC time >
+
+! --- file paths --- 
+settingsPath        '/glade/u/home/andywood/proj/SHARP/wreg/bighorn/06279940/settings/'  
+forcingPath         '/glade/work/andywood/wreg/summa_data/bighorn/forcings2/06279940/'
+outputPath          '/glade/work/andywood/wreg/summa_data/bighorn/output/06279940/c1/'
+
+! --- input/output file names ---
+decisionsFile       'modelDecisions.txt'             ! decision
+outputControlFile   'outputControl.wb.txt'           ! OUTPUT_CONTROL
+attributeFile       'attributes.06279940.v1.nc'      ! local attributes
+globalHruParamFile  'localParamInfo.txt'             ! default hru parameter info
+globalGruParamFile  'basinParamInfo.txt'             ! default gru parameter info
+forcingListFile     'forcingFileList.txt'            ! forcing file list
+initConditionFile   'coldState.3l3h_100cm.nc'        ! initial conditions
+!trialParamFile     'trialParams.06279940.c1.nc'     ! trial parameter file
+trialParamFile      'trialParams.ost.nc'             ! trial parameter file
+outFilePrefix       'wbout'                          ! output_prefix ('_*' appended)
+
+! --- input table file names ---
+vegTableFile        'VEGPARM.TBL'                    ! vegetation param table
+soilTableFile       'SOILPARM.TBL'                   ! soil param table
+generalTableFile    'GENPARM.TBL'                    ! general param tables and misc params
+noahmpTableFile     'MPTABLE.TBL'                    ! noah-mp related param tables
+

@@ -1,0 +1,81 @@
+#!/usr/bin/env Rscript
+# commands to re-order a summa static input file (attrib or params) to match the order given 
+# in an id_list (there is another script for forcings)
+# A. Wood, June 2020
+
+# --- read command line arguments
+args <- commandArgs(TRUE)
+#args <- c("hruId.sorted.txt", "hruId", "attributes.camels.v1.nc")  # for testing
+# for debugging uncomment next lines and hardwire obs
+if(length(args) != 4) {
+  message("Usage: ARGS are <target_hru_order_list> <id_name> <input_static_file> < <output_static_file>")
+  quit("no")    # don't save R program state
+}
+library(ncdf4)   # if made it to here, load libraries
+
+# --- settings (from args)
+newOrderList <- as.character(args[1])   # file listing order of ids desired for variables
+idName       <- as.character(args[2])
+mainFile     <- as.character(args[3])
+outFile      <- as.character(args[4])
+
+# --- read new hru order
+#targetHRUs <- scan(newOrderList)
+ncTarg     <- nc_open(newOrderList, write=TRUE)
+targetHRUs <- ncvar_get(ncTarg, idName)
+nc_close(ncTarg)
+
+# --- copy input file to output file, open output file
+file.copy(mainFile, outFile, overwrite=TRUE)
+ncOut <- nc_open(outFile, write=TRUE)
+
+# --- get IDs from existing file, create new ordering
+#     missing records from new desired id list are included at the end
+#     but this script doesn't remove them from the output file
+#     they have to be excluded in a post-process
+Ids       <- ncvar_get(ncOut, idName)
+newOrder  <- match(targetHRUs, Ids)  # returns new data index
+newRecs   <- length(newOrder)
+message("found ", newRecs, " IDs to write in new desired order")
+
+if(newRecs   < length(Ids)) {
+  missing    <- subset(Ids, !(Ids %in% targetHRUs))   # find any missing ids
+  missOrder  <- match(missing, Ids)                  # get their data indices
+  newOrder   <- c(newOrder, missOrder)   # combine to make full list again
+  missRecs   <- length(missing)
+  message("found ", missRecs, " other IDs missing from the desired order")
+}
+
+# --- apply new order to all variables in file, and write over old ones
+#   note: throws warning for int8 hrus, but still writes them
+Vars <- names(ncOut[['var']])
+for(v in 1:length(Vars)) {
+  message("reading, reordering, writing variable ", Vars[v])
+  tmpDat <- ncvar_get(ncOut, Vars[v])
+  ncvar_put( ncOut, Vars[v], tmpDat[newOrder] )    # for static variable
+}
+
+nc_close(ncOut)
+
+message("--------------------------------------------------------------------------")
+message("DONE: output file is: ", outFile)
+if("missing" %in% ls()) {
+  message("The desired new order was smaller than the input hrus")
+  message(" *** to get only the desired subset, remove the last ", missRecs, " records")
+  message(" *** -- ie, keep the first ", newRecs, " records")
+}
+message("--------------------------------------------------------------------------")
+
+
+# ---- DONE ----
+
+
+
+# --- misc stuff to add a new static variable (not used)
+# add new mask variable (for domain specific application)
+#hru_dim <- (ncout[['dim']])
+#fillvalue <- 0
+#maskvals <- rep(1, length(tmpdat))
+#tmp_def <- ncvar_def("mask","",hru_dim,fillvalue,"mask value",prec="integer")
+#ncvar_add(ncout, tmp_def, maskvals)
+#ncvar_put(ncout,"mask",maskvals)
