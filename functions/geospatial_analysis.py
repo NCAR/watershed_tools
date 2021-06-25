@@ -829,6 +829,7 @@ def eliminate_small_hrus_neighbor(hru_vector, hru_thld_type, hru_thld, gruNo_fie
                     in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,hruName_field] = dom_hru 
 
             # dissolve in_gpd_disv based on hruName_field column and change hruName_field from index to column
+            in_gpd_disv['geometry'] = in_gpd_disv.geometry.buffer(0)   # buffer
             in_gpd_disv = in_gpd_disv.dissolve(by=hruName_field)
             in_gpd_disv = in_gpd_disv.reset_index() 
 
