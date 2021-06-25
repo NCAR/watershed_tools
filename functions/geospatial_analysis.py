@@ -2,9 +2,11 @@
 # coding: utf-8
 
 """
-Created on Fri Oct 16 09:35:11 2020
+Geospatial analysis codes supporting scripts in 'watershed_tools' repository
+  for discretizing watersheds based on elevation, vegetation type, and solar radiation
 
-@author: hongli
+@authors: orig hongli liu, ncar, 2021
+          debugged/revised by andy wood, ncar, 2021
 
 Note: in python, there are two types of nodata mask for raster files.
 The first is in the format of GDAL. 0 is invalid region, 255 is valid region. 
@@ -28,7 +30,6 @@ import matplotlib.pyplot as plt
 import ogr
 sys.path.append('../')
 import functions.ogr2ogr as ogr2ogr
-
 
 def reproject_raster(inraster, outraster, dest_crs, resampling_method):
     '''inraster: input, raster, the raster to be re-projected.
@@ -718,13 +719,13 @@ def eliminate_small_hrus_dominant(hru_vector, hru_area_thld, gruNo_field, gruNam
     for gru in grus:
         in_gpd_disv[in_gpd_disv[gruNo_field]==gru][hruArea_field]
         max_index = in_gpd_disv[in_gpd_disv[gruNo_field]==gru][hruArea_field].argmax()
-        flt1 = (in_gpd_disv[gruNo_field]==gru)                 # filter 1: gru
-        flt2 = (in_gpd_disv[hruArea_field]<=hru_area_thld)     # filter 2: HRU area    
-        flt = (flt1 & flt2)
-        # change attributes to the most dominant one's
+        flt1      = (in_gpd_disv[gruNo_field]==gru)                 # filter 1: gru
+        flt2      = (in_gpd_disv[hruArea_field]<=hru_area_thld)     # filter 2: HRU area    
+        flt       = (flt1 & flt2)
+        # change attributes to the most dominant ones
         for field in fieldname_list:
-            in_gpd_disv.at[flt,field]=in_gpd_disv.loc[max_index,field]
-        in_gpd_disv.at[flt,hruName_field]=in_gpd_disv.loc[max_index,hruName_field]
+            in_gpd_disv.at[flt,field]     = in_gpd_disv.loc[max_index,field]
+        in_gpd_disv.at[flt,hruName_field] = in_gpd_disv.loc[max_index,hruName_field]
         pbar.update(1)
     pbar.close()
 
@@ -766,102 +767,118 @@ def eliminate_small_hrus_neighbor(hru_vector, hru_thld_type, hru_thld, gruNo_fie
                                   hruNo_field, hruNo_field_dtype, hruName_field,hruArea_field, 
                                   fieldname_list, refraster, hru_vector_disv, hru_raster_disv):
     '''
-    hru_vector: input, HRU shapefile.
-    hru_area_thld: input, number, small HRU area threthold below which the HRU will be merged with another HRU.
-    gruNo_field: input, string, field name of the gru number column, e.g.,1,2,3... 
-    gruName_field: input, string, field name of gru name, e.g., 100800120101. 
-    hruNo_field: input, string, field name of the hru number column, e.g.,1,2,3...
+    hru_vector:        input, HRU shapefile.
+    hru_area_thld:     input, number, small HRU area threthold below which the HRU will be merged with another HRU.
+    gruNo_field:       input, string, field name of the gru number column, e.g.,1,2,3... 
+    gruName_field:     input, string, field name of gru name, e.g., 100800120101. 
+    hruNo_field:       input, string, field name of the hru number column, e.g.,1,2,3...
     hruNo_field_dtype: input, string, data type of hruNo_field, used to save hru raster.
-    hruName_field: input, string, field name of the hru name column, e.g., 10080012010101, 100800120102. 
-    hruArea_field: input, string, field name of the HRU area, used in small HRU elimination.
-    fieldname_list: input, string list, a list of filed names used in hru generation.
-    refraster: input, raster, a reference raster used to rasterize outvector.
-    outraster: output, raster, HRU raster with integer value.
-    outvector: output, raster, HRU vector with HRU_full and HRU_int fields. '''
+    hruName_field:     input, string, field name of the hru name column, e.g., 10080012010101, 100800120102. 
+    hruArea_field:     input, string, field name of the HRU area, used in small HRU elimination.
+    fieldname_list:    input, string list, a list of filed names used in hru generation.
+    refraster:         input, raster, a reference raster used to rasterize outvector.
+    outraster:         output, raster, HRU raster with integer value.
+    outvector:         output, raster, HRU vector with HRU_full and HRU_int fields. '''
 
-    in_gpd = gpd.read_file(hru_vector)
-    in_gpd_disv = in_gpd.copy()
-    in_gpd_disv = in_gpd_disv.to_crs(in_gpd.crs)  # convert projection   
+    print('    reading hru shapefile')
+    in_gpd          = gpd.read_file(hru_vector)
+    print('    buffering topology')
+    in_gpd.geometry = in_gpd.geometry.buffer(0)   # fix topology errors
+    in_gpd_disv     = in_gpd.copy()
+    in_gpd_disv     = in_gpd_disv.to_crs(in_gpd.crs)  # convert projection   
+    num_orig_hrus   = len(in_gpd_disv)
+    
+    print('    eliminating ....')
 
     # PART 1. eliminate small HRUs based on HRU area threshold
+    no_neighbors_count = 0
     grus = np.unique(in_gpd_disv[gruNo_field].values)
     pbar = tqdm(total=len(grus))
     for gru in grus:
-        flt1 = (in_gpd_disv[gruNo_field]==gru)               # filter 1: gru
-        gru_df = in_gpd_disv[flt1]                           # gru dataframe
-        dom_hru_idx = gru_df[hruArea_field].idxmax()         # the most dominant HRU index in gru_df
-        dom_hru = gru_df.loc[dom_hru_idx,hruName_field]      # the most dominant HRU hruName in gru_df
+        flt1        = (in_gpd_disv[gruNo_field]==gru)          # filter 1: gru
+        gru_df      = in_gpd_disv[flt1]                        # gru dataframe
+        #print('processing GRU', gru, ' with', len(gru_df), 'hrus')    
+        if sum(gru_df.is_valid == False) > 0:                  # check validity
+            print('Topology validity problems found, may cause problems in further processing')
+            print('STOP')
+        dom_hru_idx = gru_df[hruArea_field].idxmax()           # the most dominant HRU index in gru_df
+        dom_hru     = gru_df.loc[dom_hru_idx,hruName_field]    # the most dominant HRU hruName in gru_df
         
         # update hru_area_thld if hru_thld_type is a fraction
         if hru_thld_type == 'fraction':
-            gru_area = gru_df[hruArea_field].sum()
+            gru_area      = gru_df[hruArea_field].sum()
             hru_area_thld = hru_thld*gru_area
         elif hru_thld_type == 'value':
             hru_area_thld = hru_thld        
-        flt2 = (in_gpd_disv[hruArea_field]<=hru_area_thld)     # filter 2: HRU area    
+        flt2    = (in_gpd_disv[hruArea_field] <= hru_area_thld)  # filter 2: HRU area    
         elim_df = in_gpd_disv[flt1 & flt2]                     # to-be eliminated HRU dataframe    
 
-        row_num = len(gru_df)                                  # total number of HRUs within the gru
+        row_num  = len(gru_df)                                 # total number of HRUs within the gru
         elim_num = len(elim_df)                                # number of to-be eliminated HRUs
         iter_num = 0                                           # elimination iteration number 
+        #print('number of HRUs to eliminate:', elim_num)
         
         # elimination
-        while row_num>1 and elim_num != 0 and iter_num<10:
-#             print(('GRU=%s, Iteration=%d, Target=%d/%d HRUs.')%(gru,iter_num+1,elim_num,row_num))
+        while row_num>1 and elim_num != 0 and iter_num < 10:
+        # print(('GRU=%s, Iteration=%d, Target=%d/%d HRUs.')%(gru,iter_num+1,elim_num,row_num))
 
             for irow, row in elim_df.iterrows():
                 # identify the target HRU's name and its neighbours' index in gru_df
-                target_hruName = elim_df.loc[irow,hruName_field]
-                nbhds_idx = gru_df[gru_df.geometry.touches(row['geometry'])].index.tolist() 
+                target_hruName = elim_df.loc[irow, hruName_field]
+                nbhds_idx      = gru_df[gru_df.geometry.touches(row['geometry'])].index.tolist() 
+                #print('elimating hru',irow)
 
                 # update hruName_field depending on its neighbors
                 if len(nbhds_idx)>0:
                     # when there are neightbors, take the attribute of the largest neighboring HRU.
-                    larg_nbhd_idx= gru_df.loc[nbhds_idx,hruArea_field].idxmax()
+                    larg_nbhd_idx = gru_df.loc[nbhds_idx,hruArea_field].idxmax()
                     for field in fieldname_list:
-                        in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,field]=gru_df.loc[larg_nbhd_idx,field]
+                        in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,field]     = gru_df.loc[larg_nbhd_idx,field]
                     in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,hruName_field] = gru_df.loc[larg_nbhd_idx,hruName_field] 
                 else:
-                    # when there is no neightbor, take the attribute of the most dominant HRU within the gru. 
-                    print('no neighbors')
+                    # when there is no neighbor, take the attribute of the most dominant HRU within the gru. 
+                    no_neighbors_count = no_neighbors_count + 1
+                    #print('      warning: no neighbors, using dominant gru type instead')  # print statements mess up progress bar
                     for field in fieldname_list:
-                        in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,field]=gru_df.loc[dom_hru_idx,field]
+                        in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,field]     = gru_df.loc[dom_hru_idx,field]
                     in_gpd_disv.at[in_gpd_disv[hruName_field]==target_hruName,hruName_field] = dom_hru 
 
             # dissolve in_gpd_disv based on hruName_field column and change hruName_field from index to column
-            in_gpd_disv['geometry'] = in_gpd_disv.geometry.buffer(0)   # buffer
+            #in_gpd_disv['geometry'] = in_gpd_disv.geometry.buffer(0)   # buffer (add)
             in_gpd_disv = in_gpd_disv.dissolve(by=hruName_field)
             in_gpd_disv = in_gpd_disv.reset_index() 
 
             # update HRU area and filters
             in_gpd_disv[hruArea_field] = in_gpd_disv.area       
-            flt1 = (in_gpd_disv[gruNo_field]==gru) 
-            flt2 = (in_gpd_disv[hruArea_field]<=hru_area_thld)
-            gru_df = in_gpd_disv[flt1]
-            elim_df = in_gpd_disv[flt1 & flt2] 
+            flt1        = (in_gpd_disv[gruNo_field]==gru) 
+            flt2        = (in_gpd_disv[hruArea_field]<=hru_area_thld)
+            gru_df      = in_gpd_disv[flt1]
+            elim_df     = in_gpd_disv[flt1 & flt2] 
             dom_hru_idx = gru_df[hruArea_field].idxmax()   
-            dom_hru = gru_df.loc[dom_hru_idx,hruName_field] 
+            dom_hru     = gru_df.loc[dom_hru_idx,hruName_field] 
 
             # udpdate counts
-            row_num = len(gru_df) 
+            row_num  = len(gru_df) 
             elim_num = len(elim_df) 
             iter_num = iter_num+1 
         pbar.update(1)
     pbar.close()
+    print('      -- info: no neighbors found for %d hrus, used dominant gru type instead' % no_neighbors_count)
 
     # PART 2. update HRUId and HRUNo based on elimination result
+    print('    updating hruIds, hru numbers and datatypes')
     # identify the max number of HRUs among all grus and its integer length
-    max_hru_num = [len(in_gpd_disv[in_gpd_disv[gruNo_field]==gru]) for gru in grus]
+    max_hru_num     = [len(in_gpd_disv[in_gpd_disv[gruNo_field]==gru]) for gru in grus]
     max_hru_str_len = max([len(str(max(max_hru_num))),2]) # str_len min is 2 (e.g, 01,02,...) 
     # loop through HRU to update HRUNo and HRUId
     for irow, row in in_gpd_disv.iterrows():
-        target_gru = in_gpd_disv.loc[irow,gruNo_field]
-        cum_df = in_gpd_disv[0:irow+1]
-        hru_num = len(cum_df[cum_df[gruNo_field]==target_gru])
+        target_gru  = in_gpd_disv.loc[irow,gruNo_field]
+        cum_df      = in_gpd_disv[0:irow+1]
+        hru_num     = len(cum_df[cum_df[gruNo_field]==target_gru])
         hru_num_str = str(hru_num).zfill(max_hru_str_len)        
         # update two fields
-        in_gpd_disv.at[irow,hruNo_field]=irow+1    
-        in_gpd_disv.at[irow,hruName_field]=int(str(in_gpd_disv.loc[irow,gruName_field])+hru_num_str)
+        in_gpd_disv.at[irow,hruNo_field]   = irow+1    
+        in_gpd_disv.at[irow,hruName_field] = int(str(in_gpd_disv.loc[irow,gruName_field])+hru_num_str)
 
     # change dtypes of No, Name and class fields to be int64
     for field in [hruNo_field,gruNo_field,hruName_field,gruName_field]:   
@@ -872,6 +889,8 @@ def eliminate_small_hrus_neighbor(hru_vector, hru_thld_type, hru_thld, gruNo_fie
     if 'index' in in_gpd_disv.columns:
         in_gpd_disv = in_gpd_disv.drop(columns=['index'])
     in_gpd_disv.to_file(hru_vector_disv, index=False)
+    
+    print('    done: eliminated %d hrus out of original %d' % (num_orig_hrus-len(in_gpd_disv), num_orig_hrus))
 
     # PART 3. convert hru_vector_disv to raster for zonal statistics
     rasterize_vector(hru_vector_disv,hruNo_field, hruNo_field_dtype,refraster,hru_raster_disv)
@@ -895,9 +914,9 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
     # --- PART 1. rasterize invector based on the relative resolution of attr_raster ---
     # read attr_raster and refraster resolutions
     with rio.open(attr_raster) as ff:
-        attr_SizeX, attr_SizeY  = ff.res
+        attr_SizeX, attr_SizeY = ff.res
     with rio.open(refraster) as ff:
-        ref_SizeX, ref_SizeY  = ff.res
+        ref_SizeX, ref_SizeY   = ff.res
         
     # choose the raster that has a smaller resolution from attr_size and refraster.
     # This process is to avoid converting invector into a resolution that is larger than refraster.
@@ -911,7 +930,7 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
         attr_raster_resample = os.path.join(os.path.dirname(attr_raster), os.path.basename(attr_raster).split('.')[0]+'_resample.tif')
         resample_raster(attr_raster,refraster,attr_raster_resample)
         # change attr_raster_resample as the new attr_raster for the following calculation
-        attr_raster=attr_raster_resample
+        attr_raster = attr_raster_resample
     # convert invector into the chosen refraster resolution
     in_raster = os.path.join(os.path.dirname(invector), os.path.basename(invector).split('.')[0]+'tmp.shp')    
     rasterize_vector(invector,infield,infield_dtype,refraster,in_raster)
@@ -920,12 +939,12 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
     # read invector
     in_gpd = gpd.read_file(invector)
     with rio.open(in_raster) as ff:
-        in_raster_value  = ff.read(1)
-        in_raster_mask = ff.read_masks(1)
+        in_raster_value = ff.read(1)
+        in_raster_mask  = ff.read_masks(1)
     # read new attr_raster 
     with rio.open(attr_raster) as ff:
-        attr_raster_value  = ff.read(raster_band)
-        out_meta = ff.meta.copy()
+        attr_raster_value = ff.read(raster_band)
+        out_meta          = ff.meta.copy()
 
     # initialize the output column prefix 
     if output_column_prefix in in_gpd.columns:
@@ -968,7 +987,7 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
     
     # change astype as the same as attr_raster dtype
     in_gpd[output_column_prefix] = in_gpd[output_column_prefix].astype(out_meta['dtype'])
-    output_array=output_array.astype(out_meta['dtype'])
+    output_array                 = output_array.astype(out_meta['dtype'])
     
     # save vector
     in_gpd.to_file(invector)
@@ -980,8 +999,9 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
         outf.write(out_arr_ma,1)             
     return
 
+# not sure the following works; not used
 def plot_vector(invector, column):    
-    in_gpd = gpd.read_file(invector)
+    in_gpd  = gpd.read_file(invector)
     fig, ax = plt.subplots(figsize=(10, 6))
     in_gpd.plot(column=column, ax=ax)
     ax.set_axis_off()

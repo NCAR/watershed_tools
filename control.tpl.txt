@@ -71,5 +71,5 @@ hru_area_fieldname              | areaSqm           # field name of the HRU area
 ## ---- Optional.  Catchment shapefile extraction from larger domain shapefile ----
 fulldom_gru_shpfile             | /glade/work/complexity/source_data/west_huc12/WEST.huc12.shp      # large-domain GRU shapefile. 
 toHuc_fieldname                 | ToHUC             # field name of the downstream GRU/HUC column.
-basin_outlet_hucId              | 100800140106      # HUC12 where the domain basin outlet is located.  # not ...0304
+basin_outlet_hucId              | 100800140106      # HUC/GRU where the domain basin outlet is located. 
                                                     # note, this ID is for 06282000
