@@ -167,9 +167,9 @@ def rasterize_vector(invector,infield,infield_dtype,refraster,outraster):
     return
 
 def crop_raster(inraster, invector, outraster):
-    '''inraster: input, raster, rater to be cropped.
-    invector: input, vector, provide crop extent.
-    outraster: output, raster, output raster after crop.'''
+    '''inraster: input, raster, raster to be cropped.
+       invector: input, vector, provide crop extent.
+      outraster: output, raster, output raster after crop.'''
     
     # open crop extent
     in_gdf = gpd.read_file(invector) 

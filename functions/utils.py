@@ -34,18 +34,22 @@ def set_filename(control_file, setting):
     gis_path        = basin_data_path + 'gis/'
 
     # files in main basin_data directory
-    if setting in ['basin_hucId_txt', 'basin_gruNo_gruId_txt' ]:
+    if setting in ['basin_gruId_txt', 'basin_gruNo_gruId_txt' ]:
         fileName = basin_data_path + fileName
 
     # files in GIS directory
-    elif setting in ['basin_gru_raster', 'basin_dem_raster', 'basin_slope_raster', 'basin_aspect_raster', 
-                     'basin_soiltype_raster', 'basin_radiation_raster', 'basin_landcover_raster', 
-                     'basin_landcover_resample_raster', 'refraster', 
+    elif setting in ['basin_gru_shp', 'basin_gru_raster', 'basin_dem_raster', 'basin_slope_raster',  
+                     'basin_aspect_raster', 'basin_soiltype_raster', 'basin_radiation_raster',  
+                     'basin_landcover_raster', 'basin_landcover_resample_raster', 'refraster', 
                      'basin_canopy_class_raster', 'canopy_class.tif', 'basin_flowlines_shp' ]:
         
         # special case for refraster
         if setting == 'refraster' and fileName == 'default':
             fileName = read_from_control(control_file, 'basin_dem_raster')
+
+        # special case for basin_gru_shp
+        if setting == 'basin_gru_shp' and fileName == 'default':
+            fileName = 'gru.shp'     # create this file rather than read it
 
         fileName = gis_path + fileName
                    
