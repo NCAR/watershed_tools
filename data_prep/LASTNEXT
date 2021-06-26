@@ -1,0 +1,9 @@
+LAST
+ * got stream and dem scripts to work
+ * modify stream & dem scripts into 1 that prepares basin initial shapefiles (streams, basin grus)
+ * all data prep scripts now work, but land cover has issues
+
+NEXT
+ * final LC notebookplot crashes notebook (might be a memory issue, or maybe a data type issue), but makes plot
+
+

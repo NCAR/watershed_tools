@@ -1,0 +1,4 @@
+extracting calibrated trialparams
+
+reorder_summa_static.Rscr attributes.06279940.v1.nc hruId trialParams.06279940.c1.nc.0 temp.nc
+ncks -d hru,0,17 -d gru,0,17 temp.nc trialParams.06279940.c1.nc
