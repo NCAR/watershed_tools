@@ -48,4 +48,6 @@ venv.bak/
 
 # any temporary test files and folder links
 test__*
+*/test__*
 *_tmplnk
+*/*_tmplnk
