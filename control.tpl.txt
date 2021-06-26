@@ -64,7 +64,7 @@ refraster                       | default           # reference raster file, rea
 
 ## ---- Fieldnames to assign to discretized shapefiles ---- 
 elev_class_fieldname            | elevClass         # field name of the elevation class column in HRU. 
-land_class_fieldname            | lcClass           # field name of the land class column in HRU. 
+land_class_fieldname            | lcClass           # field name of the land class column in HRU.   # change to 'canopy'
 radiation_class_fieldname       | radClass          # field name of the radiation class column in HRU.
 hru_area_fieldname              | areaSqm           # field name of the HRU area, used in small HRU elimination.
 

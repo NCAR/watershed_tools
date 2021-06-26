@@ -137,25 +137,25 @@ def plot_hru(level_str, hru_shp, gru_shp, stream_shp, wgs_crs, fieldname_list, c
     ofile: output, output figure path.
     '''    
     # 1. identify HRU classes per gru
-    hru_gpd = gpd.read_file(hru_shp)
-    hru_gpd_prj = hru_gpd.to_crs(wgs_crs)
-    hru_num = len(hru_gpd_prj)
+    hru_gpd     = gpd.read_file(hru_shp)
+    hru_gpd_prj = hru_gpd.to_crs(epsg=wgs_crs)
+    hru_num     = len(hru_gpd_prj)
 
     group_column = 'hru_type'
-    hru_gpd_prj[group_column]=''
+    hru_gpd_prj[group_column] = ''
     for field in fieldname_list:
-        hru_gpd_prj[group_column]=hru_gpd_prj[group_column]+hru_gpd_prj[field].astype('str')
-    data_unique,data_counts= np.unique(hru_gpd_prj[group_column].values,return_counts=True) # unique values and counts
+        hru_gpd_prj[group_column] = hru_gpd_prj[group_column]+hru_gpd_prj[field].astype('str')
+    data_unique,data_counts       = np.unique(hru_gpd_prj[group_column].values,return_counts=True) # unique values and counts
 
     # 2. create colormap, norm and legend (two options)
     # NOTE: use colormap only when number of HRUs > number of GRUs
     if len(fieldname_list)>0: 
         # method 1. use user-specified cmap
         if cmap_str!='user':
-            step = 1/float(len(data_unique)-1)
-            vals = np.arange(0,1+step,step)
+            step   = 1/float(len(data_unique)-1)
+            vals   = np.arange(0,1+step,step)
             colors =  mpl.cm.get_cmap(cmap_str)
-            cols = colors(vals)
+            cols   = colors(vals)
 
             legend_labels = {}
             count_record = []
@@ -192,15 +192,15 @@ def plot_hru(level_str, hru_shp, gru_shp, stream_shp, wgs_crs, fieldname_list, c
 
     # 3.2. plot basin boundary
     gru_gpd = gpd.read_file(gru_shp)
-    gru_gpd_prj = gru_gpd.to_crs(wgs_crs)
+    gru_gpd_prj = gru_gpd.to_crs(epsg=wgs_crs)
     gru_num = len(gru_gpd_prj)
     gru_gpd_prj.geometry.boundary.plot(color=None,edgecolor='k', linewidth=1.5, ax=ax) 
     del gru_gpd, gru_gpd_prj
 
     # 3.3. plot streamline
     stream_gpd = gpd.read_file(stream_shp)
-    stream_gpd_prj = stream_gpd.to_crs(wgs_crs)
-    stream_gpd_prj.plot(color='darkblue', linewidth=1.5, ax=ax)
+    stream_gpd_prj = stream_gpd.to_crs(epsg=wgs_crs)
+    stream_gpd_prj.plot(color='blue', linewidth=1.5, ax=ax)
     del stream_gpd, stream_gpd_prj
 
     # 3.4. plot legend
