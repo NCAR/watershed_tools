@@ -19,6 +19,7 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import matplotlib.colors as colors
+plt.ion()
 
 # Plot GRU boundary
 def plot_gru_bound(gru_shp,stream_shp,wgs_crs,title,ofile):
@@ -46,8 +47,8 @@ def plot_gru_bound(gru_shp,stream_shp,wgs_crs,title,ofile):
     ax.set_ylabel('Latitude')
     ax.legend(loc='best', framealpha=0.6, facecolor=None)
     fig.savefig(ofile, bbox_inches='tight',dpi=150)    
-
     plt.show()   
+
     return
 
 # Plot GRU and HRU boundary with elevation as background
