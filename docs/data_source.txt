@@ -38,6 +38,6 @@ WDBII_state   = '/glade/p/ral/hap/common_data/GIS/GMT/WDBII_shp/i/WDBII_border_i
 ----------
 Contacts:
 Andy Wood (andywood@ucar.edu)
-Hongli Liu (hongli@usask.edu)
+Hongli Liu (hongli.liu@usask.ca)
 
 
