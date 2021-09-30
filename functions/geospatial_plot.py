@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+import matplotlib.colors as colors
+plt.ion()
 
 # Plot GRU boundary
 def plot_gru_bound(gru_shp,stream_shp,wgs_crs,title,ofile):
@@ -45,8 +47,8 @@ def plot_gru_bound(gru_shp,stream_shp,wgs_crs,title,ofile):
     ax.set_ylabel('Latitude')
     ax.legend(loc='best', framealpha=0.6, facecolor=None)
     fig.savefig(ofile, bbox_inches='tight',dpi=150)    
-
     plt.show()   
+
     return
 
 # Plot GRU and HRU boundary with elevation as background
@@ -285,6 +287,9 @@ def plot_raster(inraster,wgs_crs,cmap_str,input_dict,
     data_ma = np.ma.masked_array(data, mask==0)
     data_unique,data_counts= np.unique(data[data!=nodatavals],return_counts=True) # unique values and counts
 
+    # Define a normalization from values -> colors. Assign each color to a bin.
+    norm = colors.BoundaryNorm(data_unique, len(data_unique))
+
     # 3. create colormap, norm and legend (two options)
     # method 1. use user-specified cmap
     if cmap_str!='user':
@@ -322,7 +327,7 @@ def plot_raster(inraster,wgs_crs,cmap_str,input_dict,
     fig.suptitle(title, weight='bold') 
 
     # 2.1. plot raster using rasterio.plot.show in order to show coordinate
-    raster_image = rasterio.plot.show(data_ma,ax=ax,cmap=cmap,transform=src.transform)
+    raster_image = rasterio.plot.show(data_ma,ax=ax,cmap=cmap,norm=norm,transform=src.transform)
 
     # 2.2. plot legend
     patches = [Patch(color=legend_labels[key][0], label=legend_labels[key][1]) for key in legend_labels]
@@ -404,6 +409,9 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
     data_unique, data_counts = np.unique(data[data!=nodatavals], return_counts=True) # unique values and counts
     print('data_unique:', data_unique)
     print('data_counts:', data_counts)
+    
+    # Define a normalization from values -> colors. Assign each color to a bin.
+    norm = colors.BoundaryNorm(data_unique, len(data_unique))
 
     # 3. create colormap, norm and legend (two options)
     # method 1. use user-specified cmap
@@ -449,7 +457,7 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
     fig.suptitle(title, weight='bold') 
 
     # 2.1. plot raster using rasterio.plot.show in order to show coordinate
-    raster_image = rasterio.plot.show(data_ma, ax=ax, cmap=cmap, transform=src.transform)
+    raster_image = rasterio.plot.show(data_ma, ax=ax, cmap=cmap, norm=norm, transform=src.transform)
 
     # 2.2. plot basin boundary
     gru_gpd = gpd.read_file(gru_shp)
