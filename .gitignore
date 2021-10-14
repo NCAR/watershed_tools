@@ -51,3 +51,7 @@ test__*
 */test__*
 *_tmplnk
 */*_tmplnk
+
+# alternative basin files
+analysis/alt_basins/
+
