@@ -1,27 +1,53 @@
-# watershed_tools
-Methods for creating watershed discretizations for use in hydrological modeling or analysis.  Examples use the SUMMA modeling Framework. 
+### Watershed Tools ###
 
-This repo is divided into scripts for data_preparation, geospatial calculations, analysis, test case(s) and documentation
+#### Synopsis ####
+A collection of python scripts to discretize a watershed shapefile into sub-areas to account for geospatial attributes.<br>
+Authors:  2020-2021 Andy Wood and Hongli Liu designed and wrote the codes. <br>
+          HL did initial code prototyping for the specified design and AW upgraded codes through revission, debugging, streamlining, testing and documentation. <br>
 
-data_prep/
-	1a_prepare_folders.ipynb
-	1b_prepare_gru.ipynb
-	1c_prepare_stream.ipynb
-	1d_prepare_dem.ipynb
-	1e_prepare_landcover.ipynb
-	1f_prepare_soil.ipynb
-	1g_prepare_radiation.ipynb
+The experimental application goal was to provide an effective discretization of watersheds based on 3 primary watershed attributes influencing hydrologic runoff variability:  elevation, vegetation, and solar radiation exposure. <br>
+In addition, the application targeted use in SUMMA modeling efforts, in which watersheds are viewed as 'grouped response units' (GRUs) with the sub-watersheds termed 'hydrologic response units' (HRUs) -- a naming convention used throughout the code.  <br>
+Rather than use data-driven clustering approaches for arbitrary attributes to derive HRUs, known controlling factors are applied in a binary fashion to create 8 potential discretization levels (all permutations of the 3 factors) for the GRUs.<br>
+Small HRUs can be eliminated (based on area fraction or area thresholds).<br>
+The overarching objective is to support the implementation of watershed models that represent spatial and process heterogeneity with a computationally frugal approach -- i.e., 1-8 HRU elements per watershed in this case -- although this limit is not prescribed and the code is extensible to allow for the introduction of other factors.   
 
-geospatial/
-	2_generate_HRU.ipynb
+#### Code organization ####
+The code is organized into subdirectories as follows:<br>
+ * data_prep/
+ * discretize/
+ * analysis/
+ * functions/
+ * docs/
+ * test_cases/
 
-analysis/
-	3_plot_HRU.ipynb
-	4_plot_HRU_aspect.ipynb
+#### Code workflow ####
+The recommended workflow for appying this code is the following:<br>
+ 1. In data_prep/, first run ... 
 
-test_cases/
 
-notebooks/
 
-docs/
+
+
+#### Contacts ####
+Andy Wood, andywood@ucar.edu
+Hongli Liu, hongli.liu@usask.edu
+
+
+
+
+#### References and Acknowledgements ####
+The development of this code base and the associated experimental project (led by A. Wood) was funded by the US Bureau of Reclamation under Cooperative Agreement #R16AC00039.<br>
+The initial application of the code is described in:<br>
+    Liu, H, AW Wood, D Broman, G Brown, and J Lanini, 2021.  Impact of SUMMA hydrologic model discretization on the representation of snowmelt and runoff variability.  J. Hydromet. (in prep, target submission Nov 2021)..<br>
+We thank Genevieve Brown of the University of Waterloo for providing the code implementation of the radiation algorithm that was included in the radiation preparation step.  <br>
+We also thank Wouter Knoben for providing a MERIT-based DEM file and Naoki Mizukami for providing the landcover dataset file and soiltype files that were used in the initial experiment & development. <br>
+
+
+
+
+
+
+
+
+
 
