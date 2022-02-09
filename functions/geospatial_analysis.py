@@ -26,8 +26,7 @@ import rasterio.mask
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
-import matplotlib.pyplot as plt 
-import ogr
+import matplotlib.pyplot as plt
 sys.path.append('../')
 import functions.ogr2ogr as ogr2ogr
 
@@ -998,6 +997,36 @@ def zonal_statistic(attr_raster, invector, infield, infield_dtype, refraster, me
         out_arr_ma = np.ma.masked_array(output_array, in_raster_mask==0)
         outf.write(out_arr_ma,1)             
     return
+
+def merge_shp_spatial_join(src1, src2,dst,merge_attr):
+    """Perform spatial join on shp file data.
+        Read in and output to new file
+        """
+
+    if os.path.exists(dst):
+        print('Full-domain merged shapefile already exists, not overwriting')
+        return
+
+    src1_gdf = gpd.read_file(src1)
+    src2_gdf = gpd.read_file(src2)
+    src2_gdf = src2_gdf.drop(columns='geometry')
+    src2_df = pd.DataFrame(src2_gdf)
+
+    if src1_gdf.crs != src2_gdf.crs:
+        print(f'Projection (crs) of {src1} and {src2} are not the same! Proceeding with merge.')
+
+    src1_gdf = src1_gdf.merge(src2_df, on=merge_attr)
+
+    src1_gdf.to_file(dst)
+
+    return
+
+def read_raster(file):
+    with rio.open(file) as ff:
+        data = ff.read(1)
+        mask = ff.read_masks(1)
+    data_ma = np.ma.masked_array(data, mask==0)
+    return data_ma
 
 # not sure the following works; not used
 def plot_vector(invector, column):    

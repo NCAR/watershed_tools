@@ -41,10 +41,8 @@ def calculate_Sw(latitude, elev, slope, aspect, DOY):
     # Sw_rad = np.empty_like(elev)
     declin    = (23.45*np.pi/180.0)*np.sin(2*np.pi*((284+DOY)/365.0))   # Earth's declination [rad]
     d_squared = 1/(1+0.033*np.cos(DOY*2*np.pi/365))                     # Eqn 2, earth sun distance
-    a         = np.sin(declin) * np.cos(latitude) * np.sin(slope) * np.cos(aspect) -
-                  np.sin(declin) * np.sin(latitude) * np.cos(slope)     # Eqn 11a, constant
-    b         = np.cos(declin) * np.cos(latitude) * np.cos(slope) +
-                  np.cos(declin) * np.sin(latitude) * np.sin(slope) * np.cos(aspect) # Eqn 11b, constant                                 
+    a         = np.sin(declin) * np.cos(latitude) * np.sin(slope) * np.cos(aspect) - np.sin(declin) * np.sin(latitude) * np.cos(slope)     # Eqn 11a, constant
+    b         = np.cos(declin) * np.cos(latitude) * np.cos(slope) + np.cos(declin) * np.sin(latitude) * np.sin(slope) * np.cos(aspect) # Eqn 11b, constant
     c = np.cos(declin) * np.sin(slope) * np.sin(aspect)                 # Eqn 11c, constant
     S = 1367                                                            # Solar constant[W/m2]
 

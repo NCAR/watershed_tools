@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.colors as colors
 plt.ion()
 
@@ -411,14 +412,14 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
     print('data_counts:', data_counts)
     
     # Define a normalization from values -> colors. Assign each color to a bin.
-    norm = colors.BoundaryNorm(data_unique, len(data_unique))
+    norm = mpl.colors.BoundaryNorm(data_unique, len(data_unique))
 
     # 3. create colormap, norm and legend (two options)
     # method 1. use user-specified cmap
     if cmap_str != 'user':
         vals = np.arange(len(data_unique)+1)/float(len(data_unique))
-        colors =  mpl.cm.get_cmap(cmap_str)
-        cols = colors(vals)
+        colors_vals =  mpl.cm.get_cmap(cmap_str)
+        cols = colors_vals(vals)
         cmap = mpl.colors.ListedColormap(cols, int(data_unique.max())+1)
 
         legend_labels = {}
@@ -499,4 +500,16 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
         else:
             f.write('count_sum was not greater than 0\n')
                 
+    return
+
+def plot_locatable_axes(data, ax):
+    # reference: https://matplotlib.org/stable/gallery/axes_grid1/demo_axes_divider.html#sphx-glr-gallery-axes-grid1-demo-axes-divider-py
+    divider = make_axes_locatable(ax)
+    ax_cb = divider.new_horizontal(size="5%", pad=0.05)
+    fig = ax.get_figure()
+    fig.add_axes(ax_cb)
+
+    im = ax.imshow(data)
+    plt.colorbar(im, cax=ax_cb)
+    ax_cb.yaxis.tick_right()
     return

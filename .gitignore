@@ -55,3 +55,6 @@ test__*
 # alternative basin files
 analysis/alt_basins/
 
+# logs
+*logs/
+
