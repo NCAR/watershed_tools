@@ -610,10 +610,10 @@ def define_hru(raster_list, fieldname_list, gru_raster, gruNo_hucId_txt, gruNo_f
     # note: the defined numpy array dtype needs to be consistent with the available rasterio dytpes (e.g., int32,float32,float64).
     # note: rasterio dytpes doesn't have int64.
     hru_int = np.zeros(np.shape(hru_str_fmt), dtype=np.int32)
-    unique_hrus_str = np.unique(hru_str_fmt[hru_mask!=0]) 
+    unique_hrus_str = np.unique(hru_str_fmt[hru_mask!=0])
     for ihru, hru in enumerate(unique_hrus_str):
-        hru_mask = hru_str_fmt == hru
-        hru_int[hru_mask] = int(ihru)+1
+        hru_mask_temp = hru_str_fmt == hru
+        hru_int[hru_mask_temp] = int(ihru)+1
     hru_int_ma = np.ma.masked_array(hru_int,hru_mask==0)
 
     # save hru_int_ma into raster based on gru_raster 
@@ -1012,8 +1012,8 @@ def merge_shp_spatial_join(src1, src2,dst,merge_attr):
     src2_gdf = src2_gdf.drop(columns='geometry')
     src2_df = pd.DataFrame(src2_gdf)
 
-    if src1_gdf.crs != src2_gdf.crs:
-        print(f'Projection (crs) of {src1} and {src2} are not the same! Proceeding with merge.')
+    #if src1_gdf.crs != src2_gdf.crs:
+    #    print(f'Projection (crs) of {src1} and {src2} are not the same! Proceeding with merge.')
 
     src1_gdf = src1_gdf.merge(src2_df, on=merge_attr)
 

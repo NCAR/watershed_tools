@@ -12,6 +12,8 @@ import logging
 import logging.config
 from pathlib import Path
 import rasterio as rio
+import json
+import pprint
 logger = logging.getLogger(__name__)
 
 # Function to extract a given setting from the configuration file
@@ -98,7 +100,7 @@ def read_complete_control_file(control_file, logging=False):
         if logging == True:
             logger.info(f'Setting: {key} = {val}')
 
-    set_epsg(settings)
+    #set_epsg(settings)
 
     #Add additional definitions
     #From prepare_dem_grids
@@ -144,3 +146,66 @@ def start_logging(file_name='log_file'):
     logger.info(f'Log File Generated: {logfile}')
 
     return logger
+
+def read_control_json(json_file):
+    """
+    Reads in json file to dictionary, also defining paths.
+
+    Parameters
+    ----------
+    json file: file path
+        complete path to json file
+
+    Returns
+    -------
+    settings : dict
+        dictionary of settings
+    """
+    f = open(control_json_file)
+    settings = json.load(f)
+
+    set_paths(settings,'fulldom_data', file_expected=True)
+
+    return settings
+
+def set_paths(settings, path_type, file_expected = False):
+    """
+    Update all paths in settings dictionary
+
+    Parameters
+    ----------
+    settings: dict
+        dictionary of run settings read from json
+    path_type: str
+        path type to be updated, example "basin_data"
+    file_expected: bool
+        check if the files are expected, such as needed input data files.
+
+    Returns
+    -------
+    settings : dict
+        update settings dictionary
+
+    """
+
+    full_path = path_type +'_path'
+
+    for key in settings[path_type]:
+
+        if settings[path_type][key]['path'] == full_path:
+           settings[path_type][key]['loc'] = settings['paths'][full_path] + settings[path_type][key]['name']
+
+        else:
+            settings[path_type][key]['loc'] = settings[path_type][key]['path'] + settings[path_type][key]['name']
+
+        if file_expected and not os.path.exists(settings[path_type][key]['loc']):
+            logger.error(f"Expected file {settings[path_type][key]['loc']} not found. Check path and file location")
+
+    return settings
+
+if __name__ == '__main__':
+
+    control_json_file = '/Users/drc858/GitHub/watershed_tools/test_cases/taylorpark/control.taylorpark.json'
+
+    settings = read_control_json(control_json_file)
+    pprint.pprint(settings)

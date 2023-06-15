@@ -36,8 +36,8 @@ def prepare_initial_basin_shapefiles(settings):
         # If using seperate data files where upstream hru is in the rivfile,
         # Perform an initial merge of the shp files to combine attributes based on spatial location
 
-        ga.merge_shp_spatial_join(settings['merit_hydro_catfile'],
-                                  settings['merit_hydro_rivfile'],
+        ga.merge_shp_spatial_join(settings['cat_file'],
+                                  settings['riv_file'],
                                   settings['fulldom_gru_shpfile'],
                                   merge_attr='COMID')
 
@@ -49,14 +49,14 @@ def prepare_initial_basin_shapefiles(settings):
         set_basin_GRU_shp(settings)
 
     # Reproject basin GRU shapefile if it doesn't exist
-    if not os.path.exists(basin_gru_prj_shp):
+    if not os.path.exists(settings['basin_gru_prj_shp']):
         new_epsg = settings['epsg']
-        ga.reproject_vector(basin_gru_shp, basin_gru_prj_shp, new_epsg)
-        logger.info('Reprojected basin GRUs:', basin_gru_prj_shp)
+        ga.reproject_vector(settings['basin_gru_shp'], settings['basin_gru_prj_shp'], new_epsg)
+        logger.info(f'Reprojected basin GRUs: {settings["basin_gru_prj_shp"]}')
 
     # Extract the baseline flow lines
-    if not os.path.exists(basin_flowlines_shp):
-        extract_basin_flowline_shp(control_file, settings)
+    if not os.path.exists(settings['basin_flowlines_shp']):
+        extract_basin_flowline_shp(settings)
         logger.info('Extracting basin flowlines shape')
 
 def create_dir_structure(settings):
@@ -83,8 +83,10 @@ def set_basin_GRU_shp(settings):
 
     # read filename and other necessary info
     fulldom_gru_shp = settings['fulldom_gru_shpfile']
-    outlet_gruId    = settings['basin_outlet_gruId']
+    outlet_gruId    = int(settings['basin_outlet_gruId'])
     toGRU_fieldname = settings['toGRU_fieldname']
+    gru_fieldname   = settings['gru_fieldname']
+    basin_gru_shp   = settings['basin_gru_shp']
     data = gpd.read_file(fulldom_gru_shp)
 
     # check whether two useful columns (gru_field, toGRU_field) are in gru_shp.
@@ -161,6 +163,8 @@ def extract_basin_flowline_shp(settings):
 
     # May need to reproject full-domain flowlines shapefile first
     flowlines_shp = settings['fulldom_flowlines_shp']
+    basin_gru_prj_shp = settings['basin_gru_prj_shp']
+    basin_flowlines_shp = settings['basin_flowlines_shp']
     flowlines_prj_shp = flowlines_shp.split('.shp')[0] + '_prj.shp'
 
     new_epsg = settings['epsg']
@@ -196,7 +200,7 @@ def extract_basin_flowline_shp(settings):
 
 if __name__ == '__main__':
 
-    control_file    = '../test_cases/kananaskis/control_kananaskis.txt'
+    control_file    = '/Users/drc858/GitHub/watershed_tools/test_cases/tuolumne/control_tuolumne.txt'
     settings = ut.read_complete_control_file(control_file, logging=True)
 
     prepare_initial_basin_shapefiles(settings)

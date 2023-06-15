@@ -202,7 +202,7 @@ def check_and_plot_of_avg_daily_rad(settings):
 
 if __name__ == '__main__':
 
-    control_file    = '../test_cases/kananaskis/control_kananaskis.txt'
+    control_file = '/Users/drc858/GitHub/watershed_tools/test_cases/tuolumne/control_tuolumne.txt'
     settings = ut.read_complete_control_file(control_file, logging=True)
 
     prepare_radiation(settings)
