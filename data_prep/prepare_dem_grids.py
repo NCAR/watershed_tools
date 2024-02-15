@@ -30,7 +30,7 @@ from rasterio.warp import Resampling
 import matplotlib.pyplot as plt 
 
 sys.path.append('../')   # libraries from this repo
-import functions.utils as ut
+import functions.wt_utils as ut
 import functions.geospatial_analysis as ga
 import functions.geospatial_plot as gp
 import logging
@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_dem_grids(settings):
+
     # Check whether required input shapefiles exist -- if not, exit
     if not (os.path.exists(settings['basin_flowlines_shp']) and os.path.exists(settings['basin_gru_prj_shp'])):
         logging.error(f'Required input shapefiles do not exist: {basin_gru_prj_shp} and, {basin_flowlines_shp}')
@@ -116,11 +117,15 @@ def plot_dem_slope_aspect(settings):
 
 def prepare_dem_grids_plot(settings):
     """
+    aspect_class_raster
     :param settings: dictionary containing all run settings
     :output plot of prepared dem plots with stream boundaries
     :return: None
     """
     # define legend dictionary. dist[raster_value]=list(color,label)
+
+    settings['aspect_class_raster'] = settings['basin_aspect_raster'].split('.tif')[0] + '_class.tif'
+
     legend_dict = {0: ["black", "Flat (0)"],
                    1: ["red", "North (337.5 - 22.5)"],
                    2: ["orange", 'Northeast (22.5 - 67.5)'],
@@ -141,7 +146,7 @@ def prepare_dem_grids_plot(settings):
                   7: 'West (247.5 - 292.5)',
                   8: 'Northwest (292.5 - 337.5)'}
 
-    wgs_epsg = 4326
+    wgs_epsg = rio.crs.CRS.from_epsg(settings['epsg'])
     figsize = (15, 15 * 0.6)  # width, height in inches
     title = settings['basin_name'].capitalize() + ' aspect class'
     leg_ncol = 2
@@ -156,15 +161,3 @@ def prepare_dem_grids_plot(settings):
 
     return
 
-
-if __name__ == '__main__':
-
-    control_file                      = '../test_cases/kananaskis/control_kananaskis.txt'
-    settings                          = ut.read_complete_control_file(control_file, logging=True)
-
-    settings['dem_prj_raster']        = settings['fulldom_dem_raster'].split('.tif')[0]+'_prj.tif'
-    settings['basin_gru_prj_shp']     = settings['basin_gru_shp'].split('.shp')[0]+'_prj.shp'
-
-    prepare_dem_grids(settings)
-    plot_dem_slope_aspect(settings)
-    prepare_dem_grids_plot(settings)

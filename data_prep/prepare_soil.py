@@ -16,26 +16,24 @@ Prepare soiltype input data for the basin area. This step includes:
 """
 
 import os,sys
+from pathlib import Path
 sys.path.append('../')
 import functions.geospatial_analysis as ga
 import functions.geospatial_plot as gp
-import functions.utils as ut
+import functions.wt_utils as ut
 import rasterio as rio
 from rasterio.warp import Resampling
 import logging
+import yaml
 logger = logging.getLogger(__name__)
 
 def prepare_soil(settings):
     """Prepare soil settings"""
-    # derived filenames
-    settings['plot_path']       = os.path.join(settings['basin_data_path'], 'plots/')
 
-    settings['basin_gru_prj_shp']     = settings['basin_gru_shp'].split('.shp')[0]+'_prj.shp'
-    settings['soiltype_prj_raster']   = settings['fulldom_soiltype_raster'].split('.tif')[0]+'_prj.tif'
     ##### 1. Reproject full-domain soiltype ####
     # if this is slow, the file can be prepared externally using gdalwarp -t_srs EPSG:<epsg> <input_tif> <output_tif>
     # (issue: the reprojected filesize may balloons by a factor of 200 due to substandard compression)
-    if os.path.exists(settings['fulldom_soiltype_raster']):
+    if not os.path.exists(settings["soiltype_prj_raster"]):
         ga.reproject_raster(settings['fulldom_soiltype_raster'], settings['soiltype_prj_raster'],
                             settings['dest_crs'], Resampling.nearest)
     logger.info(f'Reprojected soiltype raster: {settings["soiltype_prj_raster"]}')
@@ -53,7 +51,7 @@ def prepare_soil(settings):
 
 def plot_soils(settings):
     # Plot settings
-    wgs_epsg = 4326
+    wgs_epsg = rio.crs.CRS.from_epsg(settings['epsg'])
     figsize = (15, 15 * 0.6)  # width, height in inches
     title = settings['basin_name'].capitalize() + ' soil class'
     leg_ncol = 2
@@ -86,11 +84,15 @@ def plot_soils(settings):
 
 if __name__ == '__main__':
 
-    control_file    = '../test_cases/kananaskis/control_kananaskis.txt'
-    settings = ut.read_complete_control_file(control_file, logging=True)
+    config_file = '/Users/drc858/GitHub/summa_snakemake/snakemake/config/summa_snakemake_config.yaml'
 
-    prepare_soil(settings)
+    #read yaml file to dict using python package yaml.safe_load
+    with open(config_file) as file:
+        config = yaml.safe_load(file)
 
-
+    control_file    = config['watershed_tools_paths']['control_file']
+    wt_config          = ut.read_complete_control_file(control_file, logging=False)
+    
+    prepare_soil(wt_config)
 
 

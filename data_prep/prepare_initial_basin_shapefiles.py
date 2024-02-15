@@ -20,7 +20,7 @@ The script also makes some directories used in the discretization process.
 import os, sys
 sys.path.append('../')
 import functions.geospatial_analysis as ga
-import functions.utils as ut
+import functions.wt_utils as ut
 import geopandas as gpd
 import functions.ogr2ogr as ogr2ogr
 import numpy as np
@@ -29,24 +29,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 def prepare_initial_basin_shapefiles(settings):
+
     # Make standard directories
     create_dir_structure(settings)
-
-    if settings['merge_cat_riv_file'] == 'True':
-        # If using seperate data files where upstream hru is in the rivfile,
-        # Perform an initial merge of the shp files to combine attributes based on spatial location
-
-        ga.merge_shp_spatial_join(settings['cat_file'],
-                                  settings['riv_file'],
-                                  settings['fulldom_gru_shpfile'],
-                                  merge_attr='COMID')
-
-    # Derived filenames
-    settings['basin_gru_prj_shp'] = settings['basin_gru_shp'].split('.shp')[0] + '_prj.shp'
-
-    # If the basin shapefile doesn't exist, it needs to be extracted from another larger GRU shapefile
-    if not os.path.exists(settings['basin_gru_shp']):
-        set_basin_GRU_shp(settings)
 
     # Reproject basin GRU shapefile if it doesn't exist
     if not os.path.exists(settings['basin_gru_prj_shp']):
@@ -141,7 +126,9 @@ def write_gruId_list(settings):
     # set basin shapefiles
     basin_gru_shp = settings['basin_gru_shp']  # may exist
     gru_fieldname = settings['gru_fieldname'] # gru fieldname and text file
-
+    basin_gruId_txt = settings['basin_gruId_txt']  # output gruId list
+    basin_name = settings['basin_name']
+    
     # read the basin shapefile and write gruId list
     data = gpd.read_file(basin_gru_shp)
     if not gru_fieldname in data.columns.values:
@@ -153,6 +140,7 @@ def write_gruId_list(settings):
         np.savetxt(basin_gruId_txt, grus, fmt='%d')
     else:
         np.savetxt(basin_gruId_txt, grus, fmt='%s')
+
     logging.info('Wrote gruId file for the target basin %s: %s' % (basin_name, basin_gruId_txt))
 
 
@@ -200,10 +188,10 @@ def extract_basin_flowline_shp(settings):
 
 if __name__ == '__main__':
 
-    control_file    = '/Users/drc858/GitHub/watershed_tools/test_cases/tuolumne/control_tuolumne.txt'
+    control_file    = '/Users/drc858/GitHub/watershed_tools/test_cases/bow_above_banff/control_bow_above_banff.txt'
     settings = ut.read_complete_control_file(control_file, logging=True)
 
-    prepare_initial_basin_shapefiles(settings)
+    extract_basin_flowline_shp(settings)
 
 
 

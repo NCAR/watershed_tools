@@ -20,7 +20,7 @@ entrypoints==0.4
 executing==0.8.2
 Fiona==1.8.20
 fonttools==4.29.1
-GDAL==3.2.2
+GDAL
 geopandas==0.10.2
 importlib-resources==5.4.0
 ipykernel==6.8.0
@@ -74,7 +74,7 @@ qtconsole==5.2.2
 QtPy==2.0.1
 rasterio==1.2.10
 Rtree==0.9.7
-scipy==1.7.3
+scipy
 Send2Trash==1.8.0
 Shapely==1.8.0
 six==1.16.0

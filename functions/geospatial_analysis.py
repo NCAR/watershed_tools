@@ -373,7 +373,7 @@ def classify_raster(inraster, bound_raster, classif_trigger, bins, class_outrast
         - If bins is a string, it defines the method used to calculate the bin edge sequence.
     class_outraster: output, raster, output raster of class.
     value_outraster: output, raster, output raster of mean value per class. '''
-    
+    """
     # read inraster data
     with rio.open(inraster) as ff:
         data  = ff.read(1)
@@ -389,6 +389,27 @@ def classify_raster(inraster, bound_raster, classif_trigger, bins, class_outrast
     # define array in the same shape of data, and specify dtype!
     data_class = data.copy()
     data_value = data.copy()
+    """
+    # Read inraster data and create a mask for NoData values
+    with rio.open(inraster) as ff:
+        data = ff.read(1)
+        nodata_mask = data == -9999  # Mask where NoData values are -9999
+        data_mask = ff.read_masks(1)
+        valid_data_mask = (data_mask != 0) & ~nodata_mask  # Combine masks to exclude NoData
+        out_meta = ff.meta.copy()
+        masked_data = data * valid_data_mask
+
+
+    # Read bound_raster and identify unique bounds excluding NoData values
+    with rio.open(bound_raster) as ff:
+        bounds = ff.read(1)
+        bounds_mask = ff.read_masks(1)
+    unique_bounds = np.unique(bounds[(bounds_mask != 0) & ~nodata_mask])
+    print(f'unique bound{unique_bounds}')
+    # Initialize classification and value arrays
+    data_class = np.full(data.shape, -9999, dtype='int32')  # Use NoData value for initialization
+    data_value = np.full(data.shape, -9999, dtype='float64')  # Use NoData value for initialization
+
 
     # reclassify raster 
     # (1) if 'bins' is a string
@@ -404,7 +425,7 @@ def classify_raster(inraster, bound_raster, classif_trigger, bins, class_outrast
                 # use smedian to do classification in two conditions: 
                 # when not given classif_trigger;
                 # when given classif_trigger, and smax-smin is larger than classif_trigger. 
-#                 print('gru %d, raster value diff %f.'%(bound,smax-smin))
+                print('gru %d, raster value diff %f.'%(bound,smax-smin))
                 if (classif_trigger is None) or \
                 ((classif_trigger is not None) and ((smax-smin)>=classif_trigger)):
                     bins = [smin,smedian,smax]
@@ -424,11 +445,19 @@ def classify_raster(inraster, bound_raster, classif_trigger, bins, class_outrast
 
     # (2) if 'bins' is an integer or a sequence
     elif (np.ndim(bins) == 0) or (np.ndim(bins) == 1): 
+        bin_settings = bins
         # loop through bounds
         for bound in unique_bounds:
             smask = bounds == bound
+            smin,smedian,smax=np.min(data[smask]), np.median(data[smask]), np.max(data[smask])
+            print('gru %d, raster value diff %f.'%(bound,smax-smin))
+            if (classif_trigger is not None) and ((smax-smin)<=classif_trigger):
+                bins = [smin,smax]
+            else:
+                bins = bin_settings
             # Bin the raster data based on bins
             (hist,bin_edges) = np.histogram(data[smask],bins=bins)
+            print(f'bin edges: {bin_edges}')
             #Place the mean elev and elev band
             for ibin in np.arange(len(bin_edges)-1):
                 if ibin!= (len(bin_edges)-1-1):
@@ -587,6 +616,7 @@ def define_hru(raster_list, fieldname_list, gru_raster, gruNo_hucId_txt, gruNo_f
     # --- PART 1. rasterize HRU via raster overlay (array concatenation) ---
     raster_str_max_len_list = [] # recrod the max str lenght of input class str
     for iraster, raster in enumerate(raster_list):
+        print('raster %d: %s'%(iraster,raster))
         # read raster
         with rio.open(raster) as ff:
             raster_value = ff.read(1)
@@ -669,9 +699,10 @@ def define_hru(raster_list, fieldname_list, gru_raster, gruNo_hucId_txt, gruNo_f
             hru_num_per_gru = hru_num_per_gru+1
         else: # otherwise, reset hru num as zero.
             hru_num_per_gru = 0
-
+        import ast
         # (d) fill hruName_field = gruNo + hru_count in gruNo_current, and HUC12 field.   
-        gruName = corr_df[corr_df[gruNo_field]==int(gruNo_current)].reset_index().loc[0,gruName_field]
+        #gruName = corr_df[corr_df[gruNo_field]==ast.literal_eval(gruNo_current)].reset_index().loc[0,gruName_field]
+        gruName = gruNo_current
         hru_gpd_disv.loc[irow,hruName_field] = str(gruName) + str(hru_num_per_gru+1).zfill(2) # two-digit HRU#
         hru_gpd_disv.loc[irow,gruName_field] = str(gruName) 
 
@@ -679,7 +710,7 @@ def define_hru(raster_list, fieldname_list, gru_raster, gruNo_hucId_txt, gruNo_f
         for jfield, field in enumerate(fieldname_list):
             field_str_start = sum(raster_str_max_len_list[0:jfield])
             field_str_len   = raster_str_max_len_list[jfield]
-            hru_gpd_disv.at[irow,field] = int(hru_str[field_str_start:field_str_start+field_str_len])          
+            hru_gpd_disv.at[irow,field] = int(float(hru_str[field_str_start:field_str_start+field_str_len]))  
     
     # change dtypes of name and class fields to be int64
     hru_gpd_disv[hruName_field] = pd.to_numeric(hru_gpd_disv[hruName_field], errors='coerce')
@@ -1006,14 +1037,16 @@ def merge_shp_spatial_join(src1, src2,dst,merge_attr):
     if os.path.exists(dst):
         print('Full-domain merged shapefile already exists, not overwriting')
         return
-
+    
     src1_gdf = gpd.read_file(src1)
     src2_gdf = gpd.read_file(src2)
+    
+    # Check if the GeoDataFrames have the same projection
+    if src1_gdf.crs != src2_gdf.crs:
+        raise ValueError("GeoDataFrames have different projections.")
+    
     src2_gdf = src2_gdf.drop(columns='geometry')
     src2_df = pd.DataFrame(src2_gdf)
-
-    #if src1_gdf.crs != src2_gdf.crs:
-    #    print(f'Projection (crs) of {src1} and {src2} are not the same! Proceeding with merge.')
 
     src1_gdf = src1_gdf.merge(src2_df, on=merge_attr)
 
@@ -1037,3 +1070,35 @@ def plot_vector(invector, column):
     # plt.axis('equal')
     plt.show()   
     return
+
+def crop_raster_with_buffer(shapefile_path, raster_path, output_path, buffer_distance):
+    # Load the shapefile using geopandas
+    shapefile = gpd.read_file(shapefile_path)
+    
+    # Calculate the bounding box of the shapefile
+    minx, miny, maxx, maxy = shapefile.total_bounds
+    
+    # Create a buffered bounding box
+    bbox = box(minx - buffer_distance, miny - buffer_distance, 
+               maxx + buffer_distance, maxy + buffer_distance)
+    
+    # Create a GeoDataFrame from the buffered bounding box
+    geo = gpd.GeoDataFrame({'geometry': bbox}, index=[0], crs=shapefile.crs)
+    
+    # Open the raster file
+    with rasterio.open(raster_path) as src:
+        # Clip the raster with the buffered bounding box using rasterio's mask function
+        out_image, out_transform = mask(src, geo.geometry, crop=True)
+        out_meta = src.meta.copy()
+        
+        # Update the metadata with new dimensions, transform, and CRS
+        out_meta.update({
+            "driver": "GTiff",
+            "height": out_image.shape[1],
+            "width": out_image.shape[2],
+            "transform": out_transform
+        })
+        
+        # Write the clipped raster to an output file
+        with rasterio.open(output_path, "w", **out_meta) as dest:
+            dest.write(out_image)

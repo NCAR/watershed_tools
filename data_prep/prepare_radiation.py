@@ -25,7 +25,7 @@ Note that it is better to run this code on high-performance computers because th
 
 import os, shutil, sys
 sys.path.append('../')
-import functions.utils as ut
+import functions.wt_utils as ut
 import functions.geospatial_analysis as ga
 import functions.geospatial_plot as gp
 import geopandas as gpd
@@ -82,6 +82,7 @@ def read_shell_script_template(settings):
     return shell_script_cmd
 
 def create_radiation_job_submissions(settings):
+    
     # create job submission files for radiation calculation
     shell_script_cmd = read_shell_script_template(settings)
     # first set radiation calculation period
@@ -112,7 +113,7 @@ def submit_radiation_job_submissions(settings):
     Submit jobs, one per day in range (or run consecutively)
     for large domains (more than a few square degrees, submission is likely faster; otherwise sequential may be fine)
     """
-    for i in tqdm(np.arange(0, settings['ndays'] + 4, 7)):
+    for i in tqdm(np.arange(0, settings['ndays'] + 4, 7)):  
         DOY = int(settings['solrad_start_DOY']) + i
         command_filename = os.path.join(settings['command_dir'], 'qsub_DOY' + str(DOY) + '.sh')
 
@@ -124,6 +125,7 @@ def submit_radiation_job_submissions(settings):
     logger.info(f'Shell script {command_filename} submitted')
 
 def calculate_avg_daily_rad(settings):
+
     """Calculate average daily radiation"""
     # read daily radiation over the period and calculate the period mean
     ndays_eff = len(np.arange(0, settings['ndays'] + 4, 7))  # number of days that will be averaged at weekly frequency
@@ -199,14 +201,6 @@ def check_and_plot_of_avg_daily_rad(settings):
     plt.show()
 
     return
-
-if __name__ == '__main__':
-
-    control_file = '/Users/drc858/GitHub/watershed_tools/test_cases/tuolumne/control_tuolumne.txt'
-    settings = ut.read_complete_control_file(control_file, logging=True)
-
-    prepare_radiation(settings)
-
 
 
 

@@ -12,8 +12,6 @@ import logging
 import logging.config
 from pathlib import Path
 import rasterio as rio
-import json
-import pprint
 logger = logging.getLogger(__name__)
 
 # Function to extract a given setting from the configuration file
@@ -78,7 +76,7 @@ def set_epsg(settings):
 def read_complete_control_file(control_file, logging=False):
     """Read the control file to a dictionary, with the option to log"""
     if logging == True:
-       start_logging()
+       logger = start_logging()
 
     settings = {}
     with open(control_file) as contents:
@@ -89,8 +87,8 @@ def read_complete_control_file(control_file, logging=False):
         key = line.split('|', 1)[0]
         val = line.split('|', 1)[1]
         val = val.split('#', 1)[0]
-        #Add the custom file path setting defined in set_filename functions
 
+        #Add the custom file path setting defined in set_filename functions
         key = key.strip()
         val = val.strip()
         if key != 'basin_data_bath':
@@ -100,13 +98,18 @@ def read_complete_control_file(control_file, logging=False):
         if logging == True:
             logger.info(f'Setting: {key} = {val}')
 
-    #set_epsg(settings)
-
     #Add additional definitions
     #From prepare_dem_grids
     settings['dem_prj_raster']        = settings['fulldom_dem_raster'].split('.tif')[0]+'_prj.tif'
+    settings['soiltype_prj_raster']   = settings['fulldom_soiltype_raster'].split('.tif')[0]+'_prj.tif'
+    settings['landcover_prj_raster']  = settings['fulldom_landcover_raster'].split('.tif')[0] + '_prj.tif'
     settings['basin_gru_prj_shp']     = settings['basin_gru_shp'].split('.shp')[0]+'_prj.shp'
+    settings['aspect_class_raster']   = settings['basin_aspect_raster'].split('.tif')[0] + '_class.tif'
+    settings['plot_path']             = settings['basin_data_path'] + 'plots/'
+    settings['result_path']           = settings['basin_data_path'] + 'results/'
 
+    settings['dest_crs']              = settings['epsg']#rio.crs.CRS.from_epsg(settings['epsg'])
+     
     return settings
 
 def start_logging(file_name='log_file'):
@@ -128,12 +131,11 @@ def start_logging(file_name='log_file'):
 
     #Set unique file output name
     now = datetime.datetime.now()
-    log_file_name = f'{file_name}_{now.strftime("%Y-%m-%d_%H:%M:%S")}.log'
 
     #Create the output directory (.\logs\logfile.log)
     working_folder = os.path.dirname(os.path.abspath(__file__))
     Path(working_folder, './../logs').mkdir(parents=True, exist_ok=True)
-    logfile = os.path.join(working_folder, './../logs', log_file_name)
+    logfile = os.path.join(working_folder, './../logs', file_name)
 
     #Read settings from logger_config.ini
     logging.config.fileConfig(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../control_files/logger_config.ini'),
@@ -146,27 +148,6 @@ def start_logging(file_name='log_file'):
     logger.info(f'Log File Generated: {logfile}')
 
     return logger
-
-def read_control_json(json_file):
-    """
-    Reads in json file to dictionary, also defining paths.
-
-    Parameters
-    ----------
-    json file: file path
-        complete path to json file
-
-    Returns
-    -------
-    settings : dict
-        dictionary of settings
-    """
-    f = open(control_json_file)
-    settings = json.load(f)
-
-    set_paths(settings,'fulldom_data', file_expected=True)
-
-    return settings
 
 def set_paths(settings, path_type, file_expected = False):
     """
@@ -203,9 +184,3 @@ def set_paths(settings, path_type, file_expected = False):
 
     return settings
 
-if __name__ == '__main__':
-
-    control_json_file = '/Users/drc858/GitHub/watershed_tools/test_cases/taylorpark/control.taylorpark.json'
-
-    settings = read_control_json(control_json_file)
-    pprint.pprint(settings)

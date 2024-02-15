@@ -463,14 +463,14 @@ def plot_raster_and_bound_stream(inraster,gru_shp,stream_shp,wgs_crs,cmap_str,in
     # 2.2. plot basin boundary
     gru_gpd = gpd.read_file(gru_shp)
     #gru_gpd_prj = gru_gpd.to_crs(wgs_crs)
-    gru_gpd_prj = gru_gpd.to_crs(epsg=wgs_crs)
+    gru_gpd_prj = gru_gpd.to_crs(crs=wgs_crs)
     gru_gpd_prj['new_column'] = 0
     gpd_new = gru_gpd_prj.dissolve(by='new_column')
     gpd_new.boundary.plot(color=None,edgecolor='k',linewidth=1,ax=ax) 
 
     # 2.3. plot streamline
     stream_gpd     = gpd.read_file(stream_shp)
-    stream_gpd_prj = stream_gpd.to_crs(epsg=wgs_crs)
+    stream_gpd_prj = stream_gpd.to_crs(crs=wgs_crs)
     stream_gpd_prj.plot(color='blue', linewidth=1.5, ax=ax)
 
     # 2.3. plot legend

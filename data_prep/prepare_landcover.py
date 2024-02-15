@@ -25,9 +25,8 @@ import os, sys
 sys.path.append('../')
 import functions.geospatial_analysis as ga
 import functions.geospatial_plot as gp
-import functions.utils as ut
+import functions.wt_utils as ut
 import rasterio as rio
-import rasterio.shutil
 from rasterio.warp import Resampling
 import logging
 logger = logging.getLogger(__name__)
@@ -35,6 +34,7 @@ logger = logging.getLogger(__name__)
 # #### Set data files, paths and other entries ####
 
 def prepare_landcover(settings):
+
     landcover_raster = settings['fulldom_landcover_raster']
 
     basin_gru_shp                     = settings['basin_gru_shp']
@@ -54,7 +54,8 @@ def prepare_landcover(settings):
     if not os.path.exists(settings['basin_landcover_raster']):
         # if needed, reproject original landcover to target equal-area coordinates
         if not os.path.exists(landcover_prj_raster):
-            ga.reproject_raster(landcover_raster, landcover_prj_raster, dest_crs, Resampling.nearest)
+            dest_espg = rio.crs.CRS.from_epsg(settings['epsg'])
+            ga.reproject_raster(landcover_raster, landcover_prj_raster, dest_espg, Resampling.nearest)
             print('reprojected landcover raster:', landcover_prj_raster)
 
         # clip raster based on projected basin extent
@@ -81,7 +82,7 @@ def prepare_landcover(settings):
 
 def plot_landcover_classes(settings):
     # plot settings
-    wgs_epsg = 4326
+    wgs_epsg = rio.crs.CRS.from_epsg(settings['epsg'])
     figsize = (15, 15 * 0.6)  # width, height in inches
     title = settings['basin_name'].capitalize() + ' landcover type'
     leg_ncol = 2
@@ -124,7 +125,7 @@ def plot_landcover_classes(settings):
 
 
 def plot_canopy_class(settings):
-    wgs_epsg = 4326
+    wgs_epsg = rio.crs.CRS.from_epsg(settings['epsg'])
     figsize = (12, 12 * 0.6)  # width, height in inches
     title = basin_name.capitalize() + ' canopy/no-canopy type'
     leg_ncol = 2
